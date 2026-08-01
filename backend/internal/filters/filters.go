@@ -27,6 +27,51 @@ var dictDimensions = map[string]string{
 	"category":   "category",
 }
 
+// rollupDimensions are the event dims denormalized onto concurrency_minute_serving.
+// Content-dict dims (video_type/category/title) and user_id are NOT in the rollup.
+var rollupDimensions = map[string]string{
+	"platform":          "platform",
+	"country":           "country",
+	"content_id":        "content_id",
+	"app_version":       "app_version",
+	"audio_language":    "audio_language",
+	"subtitle_language": "subtitle_language",
+	"player_version":    "player_version",
+}
+
+// RollupSupported reports whether every filter targets a rollup column (so the
+// wide rollup can serve the query without a segment semi-join).
+func RollupSupported(fs []Filter) bool {
+	for _, f := range fs {
+		if _, ok := rollupDimensions[strings.ToLower(strings.TrimSpace(f.Dimension))]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// BuildRollupPredicates builds direct column predicates for the wide rollup.
+func BuildRollupPredicates(fs []Filter) ([]string, error) {
+	out := make([]string, 0, len(fs))
+	for i, f := range fs {
+		dim := strings.ToLower(strings.TrimSpace(f.Dimension))
+		col, ok := rollupDimensions[dim]
+		if !ok {
+			return nil, fmt.Errorf("filter[%d]: %q is not a rollup dimension", i, f.Dimension)
+		}
+		op := strings.ToLower(strings.TrimSpace(f.Op))
+		if op == "" {
+			op = "eq"
+		}
+		pred, err := buildPred(col, op, f, dim == "content_id")
+		if err != nil {
+			return nil, fmt.Errorf("filter[%d]: %w", i, err)
+		}
+		out = append(out, pred)
+	}
+	return out, nil
+}
+
 // Filter is a single equality (or IN) predicate on a known dimension.
 type Filter struct {
 	Dimension string   `json:"dimension"`

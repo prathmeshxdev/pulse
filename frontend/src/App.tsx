@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Dimension, Filter, Grain } from "./types";
+import type { Dimension, Engine, Filter, Grain } from "./types";
 import { getDimensions, getWindow } from "./api";
 import { FilterSidebar } from "./components/FilterSidebar";
 import { Dashboard } from "./components/Dashboard";
@@ -15,6 +15,7 @@ export default function App() {
   const [end, setEnd] = useState("");
   const [grain, setGrain] = useState<Grain>("minute");
   const [breakdownDim, setBreakdownDim] = useState("");
+  const [engine, setEngine] = useState<Engine>("narrow");
   const [bootError, setBootError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,6 +61,17 @@ export default function App() {
         <FilterSidebar dimensions={dimensions} filters={filters} onChange={setFilters} />
 
         <hr />
+        <div className="field" style={{ marginBottom: 14 }}>
+          <label>Serving engine</label>
+          <div className="seg">
+            {(["narrow", "rollup"] as Engine[]).map((e) => (
+              <button key={e} className={engine === e ? "active" : ""} onClick={() => setEngine(e)}>
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="field">
           <label>Break down by</label>
           <select value={breakdownDim} onChange={(e) => setBreakdownDim(e.target.value)}>
@@ -86,7 +98,7 @@ export default function App() {
         {bootError && <div className="error">Backend not reachable: {bootError}</div>}
 
         {tab === "dashboard" ? (
-          <Dashboard start={start} end={end} grain={grain} filters={filters} breakdownDim={breakdownDim} />
+          <Dashboard start={start} end={end} grain={grain} filters={filters} breakdownDim={breakdownDim} engine={engine} />
         ) : (
           <ReplayView start={start} end={end} grain={grain} filters={filters} />
         )}

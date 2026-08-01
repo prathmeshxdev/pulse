@@ -34,6 +34,33 @@ func EmitAll(segs []models.Segment) []models.MinuteDelta {
 	return out
 }
 
+// EmitWide produces the same any-overlap +1/−1 pair but with the segment's
+// dimensions denormalized onto each row, for the optional wide rollup.
+func EmitWide(seg models.Segment) []models.WideDelta {
+	if !seg.SegmentEnd.After(seg.SegmentStart) {
+		return nil
+	}
+	plus := StartOfMinute(seg.SegmentStart)
+	minus := StartOfMinute(seg.SegmentEnd.Add(-time.Millisecond)).Add(time.Minute)
+	row := func(m time.Time, d int64) models.WideDelta {
+		return models.WideDelta{
+			Minute: m, Platform: seg.Platform, Country: seg.Country, ContentID: seg.ContentID,
+			AppVersion: seg.AppVersion, AudioLanguage: seg.AudioLanguage,
+			SubtitleLanguage: seg.SubtitleLanguage, PlayerVersion: seg.PlayerVersion, Delta: d,
+		}
+	}
+	return []models.WideDelta{row(plus, 1), row(minus, -1)}
+}
+
+// EmitAllWide emits wide deltas for every segment.
+func EmitAllWide(segs []models.Segment) []models.WideDelta {
+	out := make([]models.WideDelta, 0, len(segs)*2)
+	for _, s := range segs {
+		out = append(out, EmitWide(s)...)
+	}
+	return out
+}
+
 // StartOfMinute truncates to the UTC minute boundary.
 func StartOfMinute(t time.Time) time.Time {
 	t = t.UTC()

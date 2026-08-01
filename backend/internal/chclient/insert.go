@@ -98,6 +98,27 @@ func InsertDeltas(ctx context.Context, conn driver.Conn, table string, rows []mo
 	return batch.Send()
 }
 
+// InsertRollup batch-inserts wide deltas into concurrency_minute_serving (FQN).
+func InsertRollup(ctx context.Context, conn driver.Conn, table string, rows []models.WideDelta) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	stmt := fmt.Sprintf(`INSERT INTO %s
+		(minute, platform, country, content_id, app_version, audio_language,
+		 subtitle_language, player_version, delta)`, table)
+	batch, err := conn.PrepareBatch(ctx, stmt)
+	if err != nil {
+		return err
+	}
+	for _, d := range rows {
+		if err := batch.Append(d.Minute.UTC(), d.Platform, d.Country, d.ContentID, d.AppVersion,
+			d.AudioLanguage, d.SubtitleLanguage, d.PlayerVersion, d.Delta); err != nil {
+			return err
+		}
+	}
+	return batch.Send()
+}
+
 // StageAndReplace performs an atomic per-partition swap: it builds the new data
 // in a staging table (same engine/partitioning, created AS the target) and then
 // ALTER TABLE ... REPLACE PARTITION ... FROM staging for each affected day.

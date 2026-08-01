@@ -119,6 +119,16 @@ FROM numbers(dateDiff('minute', %s, %s))`, rangeStart, rangeStart, rangeEnd))
 FROM grid AS g
 LEFT JOIN net AS n ON g.minute = n.minute`)
 
+	applyMetric(b, req)
+	return Query{
+		SQL:      b.Build(),
+		CacheKey: cacheKey(req, database, maxSegmentSpanHours),
+	}, nil
+}
+
+// applyMetric adds the final SELECT over the `curve` CTE for the requested
+// metric/grain. Shared by the narrow and rollup query builders.
+func applyMetric(b *querybuilder.Builder, req Request) {
 	switch req.Metric {
 	case MetricTimeseries:
 		switch req.Grain {
@@ -151,12 +161,60 @@ LEFT JOIN net AS n ON g.minute = n.minute`)
 			Select("peak", "max(concurrency) AS peak_concurrency").
 			Select("avg", "avg(concurrency) AS avg_concurrency")
 	}
+}
 
-	sql := b.Build()
-	return Query{
-		SQL:      sql,
-		CacheKey: cacheKey(req, database, maxSegmentSpanHours),
-	}, nil
+// BuildRollupQuery compiles the same curve against the wide rollup
+// (concurrency_minute_serving): dimensions are predicates ON the delta rows, so
+// there is no segment semi-join. Same opening balance + dense grid + cumsum, so
+// answers are identical to the narrow path (verified). Callers use this only when
+// filters.RollupSupported is true.
+func BuildRollupQuery(req Request, database string, maxSegmentSpanHours int) (Query, error) {
+	if !req.End.After(req.Start) {
+		return Query{}, fmt.Errorf("end must be after start")
+	}
+	if req.Grain == "" {
+		req.Grain = GrainMinute
+	}
+	if req.Metric == "" {
+		req.Metric = MetricSummary
+	}
+	if maxSegmentSpanHours <= 0 {
+		maxSegmentSpanHours = 72
+	}
+	preds, err := filters.BuildRollupPredicates(req.Filters)
+	if err != nil {
+		return Query{}, err
+	}
+	dimWhere := ""
+	if len(preds) > 0 {
+		dimWhere = "AND " + strings.Join(preds, "\n  AND ")
+	}
+	rangeStart := fmt.Sprintf("toDateTime(%s, 'UTC')", formatDT(req.Start))
+	rangeEnd := fmt.Sprintf("toDateTime(%s, 'UTC')", formatDT(req.End))
+	lookback := fmt.Sprintf("INTERVAL %d HOUR", maxSegmentSpanHours)
+	tbl := database + ".concurrency_minute_serving"
+
+	b := querybuilder.New("")
+	b.WithRaw("opening", fmt.Sprintf(`SELECT sum(delta) AS c0
+FROM %s
+WHERE minute >= %s - %s AND minute < %s
+  %s`, tbl, rangeStart, lookback, rangeStart, dimWhere))
+	b.WithRaw("net", fmt.Sprintf(`SELECT minute, sum(delta) AS net
+FROM %s
+WHERE minute >= %s AND minute < %s
+  %s
+GROUP BY minute`, tbl, rangeStart, rangeEnd, dimWhere))
+	b.WithRaw("grid", fmt.Sprintf(`SELECT %s + toIntervalMinute(number) AS minute
+FROM numbers(dateDiff('minute', %s, %s))`, rangeStart, rangeStart, rangeEnd))
+	b.WithRaw("curve", `SELECT
+    g.minute AS minute,
+    ifNull((SELECT c0 FROM opening), 0)
+        + sum(ifNull(n.net, 0)) OVER (ORDER BY g.minute) AS concurrency
+FROM grid AS g
+LEFT JOIN net AS n ON g.minute = n.minute`)
+
+	applyMetric(b, req)
+	return Query{SQL: b.Build(), CacheKey: "rollup|" + cacheKey(req, database, maxSegmentSpanHours)}, nil
 }
 
 func formatDT(t time.Time) string {

@@ -1,4 +1,4 @@
-import type { BreakdownRow, ChartResult, CurvePoint, Dimension, Filter, Grain, Window } from "./types";
+import type { BreakdownRow, ChartResult, CurvePoint, Dimension, Engine, Filter, Grain, Window } from "./types";
 
 const num = (v: unknown): number | null =>
   v === null || v === undefined ? null : typeof v === "number" ? v : Number(v);
@@ -39,9 +39,10 @@ interface ChartBody {
   grain: Grain;
   metric: "summary" | "timeseries";
   filters: Filter[];
+  engine?: Engine;
 }
 
-async function postChart(body: ChartBody): Promise<{ rows: Record<string, unknown>[]; peak: unknown; avg: unknown }> {
+async function postChart(body: ChartBody): Promise<{ rows: Record<string, unknown>[]; peak: unknown; avg: unknown; engine?: string }> {
   const r = await fetch("/api/v1/concurrency/chart", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -57,11 +58,12 @@ export async function getChart(
   start: string,
   end: string,
   grain: Grain,
-  filters: Filter[]
+  filters: Filter[],
+  engine: Engine = "narrow"
 ): Promise<ChartResult> {
   const [summary, series] = await Promise.all([
-    postChart({ start, end, grain, metric: "summary", filters }),
-    postChart({ start, end, grain, metric: "timeseries", filters }),
+    postChart({ start, end, grain, metric: "summary", filters, engine }),
+    postChart({ start, end, grain, metric: "timeseries", filters, engine }),
   ]);
 
   const points: CurvePoint[] = series.rows.map((row) => {
@@ -75,6 +77,7 @@ export async function getChart(
     points,
     peak: num(summary.peak) ?? (summary.rows[0] ? num(summary.rows[0].peak_concurrency) : null),
     avg: num(summary.avg) ?? (summary.rows[0] ? num(summary.rows[0].avg_concurrency) : null),
+    engine: summary.engine,
   };
 }
 

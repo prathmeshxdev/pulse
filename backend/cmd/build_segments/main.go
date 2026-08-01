@@ -129,10 +129,31 @@ func loadClickHouse(dsn, database string, segs []models.Segment, drows []models.
 		}); err != nil {
 		return err
 	}
-	return chclient.StageAndReplace(ctx, conn, database, "minute_deltas",
+	if err := chclient.StageAndReplace(ctx, conn, database, "minute_deltas",
 		chclient.PartitionDays(deltaTimes...), func(stg string) error {
 			return chclient.InsertDeltas(ctx, conn, stg, drows)
-		})
+		}); err != nil {
+		return err
+	}
+
+	// Optional wide rollup — populated by the same pipeline when the table exists
+	// (migration 008). Same any-overlap edges, dimensions denormalized. Idempotent
+	// via the same staging swap on minute-day partitions.
+	if chclient.TableExists(ctx, conn, database, "concurrency_minute_serving") {
+		wide := deltas.EmitAllWide(segs)
+		wideTimes := make([]time.Time, 0, len(wide))
+		for _, wd := range wide {
+			wideTimes = append(wideTimes, wd.Minute)
+		}
+		if err := chclient.StageAndReplace(ctx, conn, database, "concurrency_minute_serving",
+			chclient.PartitionDays(wideTimes...), func(stg string) error {
+				return chclient.InsertRollup(ctx, conn, stg, wide)
+			}); err != nil {
+			return err
+		}
+		fmt.Printf("clickhouse: populated concurrency_minute_serving rollup (%d wide deltas)\n", len(wide))
+	}
+	return nil
 }
 
 func writeJSONL[T any](path string, rows []T) error {

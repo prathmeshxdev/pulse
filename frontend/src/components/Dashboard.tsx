@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ChartResult, Filter, Grain } from "../types";
+import type { ChartResult, Engine, Filter, Grain } from "../types";
 import { getChart } from "../api";
 import { Chart } from "./Chart";
 import { Breakdown } from "./Breakdown";
@@ -11,6 +11,7 @@ interface Props {
   grain: Grain;
   filters: Filter[];
   breakdownDim: string;
+  engine: Engine;
 }
 
 const MAX_POINTS = 2000;
@@ -18,7 +19,7 @@ const MAX_POINTS = 2000;
 const fmt = (n: number | null) =>
   n === null ? "—" : n >= 1000 ? Math.round(n).toLocaleString() : n.toFixed(n < 10 ? 2 : 1);
 
-export function Dashboard({ start, end, grain, filters, breakdownDim }: Props) {
+export function Dashboard({ start, end, grain, filters, breakdownDim, engine }: Props) {
   const [res, setRes] = useState<ChartResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,7 +31,7 @@ export function Dashboard({ start, end, grain, filters, breakdownDim }: Props) {
     let cancelled = false;
     setLoading(true);
     const h = setTimeout(() => {
-      getChart(start, end, grain, filters)
+      getChart(start, end, grain, filters, engine)
         .then((r) => !cancelled && (setRes(r), setErr(null)))
         .catch((e) => !cancelled && setErr(String(e)))
         .finally(() => !cancelled && setLoading(false));
@@ -39,7 +40,7 @@ export function Dashboard({ start, end, grain, filters, breakdownDim }: Props) {
       cancelled = true;
       clearTimeout(h);
     };
-  }, [start, end, grain, JSON.stringify(filters)]);
+  }, [start, end, grain, engine, JSON.stringify(filters)]);
 
   const label = grain === "minute" ? "concurrency" : "peak in bucket";
   const shown = useMemo(() => (res ? downsample(res.points, MAX_POINTS) : []), [res]);
@@ -72,6 +73,12 @@ export function Dashboard({ start, end, grain, filters, breakdownDim }: Props) {
       <div className="card">
         <h3>
           Concurrency curve — {label}
+          {res?.engine && (
+            <span className="muted" style={{ fontWeight: 400 }}>
+              {" "}· engine: {res.engine}
+              {engine === "rollup" && res.engine === "narrow" ? " (fell back — filter not in rollup)" : ""}
+            </span>
+          )}
           {loading && <span className="muted" style={{ fontWeight: 400 }}> · updating…</span>}
         </h3>
         {shown.length > 0 ? (

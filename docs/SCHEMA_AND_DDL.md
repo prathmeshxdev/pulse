@@ -340,9 +340,9 @@ This needs no extra state and is merge-independent. Without it, running `reconci
 
 ---
 
-## 008 — concurrency_minute_serving (documented, not built)
+## 008 — concurrency_minute_serving (built, opt-in accelerator)
 
-**Do not build this for the hackathon.** The source of truth is `minute_deltas` semi-joined to `session_active_segments`. At ~10^5 delta rows and ~52,000 segments, every query is a full scan of a table that fits in cache and returns in single-digit to low-double-digit milliseconds. A rollup cannot improve on that measurably, and it reintroduces exactly the coupling the narrow model removes.
+**Now implemented as an opt-in engine (migration 008), while the narrow model stays the default.** The source of truth remains `minute_deltas` semi-joined to `session_active_segments`; at ~10^5 delta rows every query is a cache-resident scan returning in low-double-digit ms, so the rollup is not *needed* at hackathon scale. It is built anyway to demonstrate the 100× serving shape: the same pipeline populates it (wide any-overlap deltas, idempotent staging swap), and `POST /api/v1/concurrency/chart {"engine":"rollup"}` serves from it — filtering directly on denormalized dimensions with no segment semi-join. Verified to return identical answers to the narrow path; requests whose filters aren't rollup dimensions (e.g. `video_type`) auto-fall back to narrow.
 
 This DDL is kept as the **100x scaling answer**: at a scale where the semi-join stops being free, this is the shape a hot-dimension rollup would take.
 
@@ -979,7 +979,7 @@ erDiagram
 | `clickhouse/queries/build_deltas.sql` | Batch delta backfill |
 | `clickhouse/queries/reconcile_session.sql` | Incremental correction for one session |
 
-`concurrency_minute_serving` and the hour/day stats tables have **no migration file** — they are documented as the 100x answer and not built.
+`concurrency_minute_serving` is built via `008_concurrency_minute_serving.sql` as an **opt-in** accelerator (default serving stays narrow). The hour/day *stats* tables remain unbuilt — peak/avg aren't additive, so they can't be precomputed per arbitrary dimension combo without the full cube.
 
 ---
 

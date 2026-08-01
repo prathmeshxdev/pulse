@@ -19,10 +19,13 @@ export interface CurvePoint {
   avg?: number; // avg-in-bucket for hour/day
 }
 
+export type Engine = "narrow" | "rollup";
+
 export interface ChartResult {
   points: CurvePoint[];
   peak: number | null;
   avg: number | null;
+  engine?: string; // which serving engine actually ran (rollup falls back to narrow)
 }
 
 export interface Window {

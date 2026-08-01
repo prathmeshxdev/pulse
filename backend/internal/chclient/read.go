@@ -44,6 +44,23 @@ func FetchSessionEvents(ctx context.Context, conn driver.Conn, db string, sessio
 	return out, rows.Err()
 }
 
+// TableExists reports whether database.table exists (used to make the optional
+// rollup population a no-op when the table isn't migrated).
+func TableExists(ctx context.Context, conn driver.Conn, database, table string) bool {
+	rows, err := QueryMaps(ctx, conn, fmt.Sprintf(
+		"SELECT count() AS n FROM system.tables WHERE database='%s' AND name='%s'", database, table))
+	if err != nil || len(rows) == 0 {
+		return false
+	}
+	switch v := rows[0]["n"].(type) {
+	case uint64:
+		return v > 0
+	case int64:
+		return v > 0
+	}
+	return false
+}
+
 // SegmentIDsForSessions returns segment_ids currently attributed to the given
 // sessions — the set whose published delta edges a reconcile must cancel.
 func SegmentIDsForSessions(ctx context.Context, conn driver.Conn, db string, sessionIDs []string) ([]uint64, error) {

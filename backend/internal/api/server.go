@@ -129,6 +129,7 @@ type chartRequestBody struct {
 	Grain   string           `json:"grain"`
 	Metric  string           `json:"metric"`
 	Filters []filters.Filter `json:"filters"`
+	Engine  string           `json:"engine"` // "" | "narrow" (default) | "rollup"
 }
 
 func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
@@ -164,19 +165,31 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 		Metric:  concurrency.Metric(body.Metric),
 		Filters: body.Filters,
 	}
-	q, err := concurrency.BuildChartQuery(req, s.cfg.Constants.Database, s.cfg.Constants.MaxSegmentSpanHours)
+	// Engine: narrow (default, semi-join) or the opt-in wide rollup. Rollup is used
+	// only when requested AND all filters are rollup dimensions; otherwise we fall
+	// back to narrow so the request never fails on an unsupported filter.
+	engine := "narrow"
+	var q concurrency.Query
+	if body.Engine == "rollup" && filters.RollupSupported(req.Filters) {
+		q, err = concurrency.BuildRollupQuery(req, s.cfg.Constants.Database, s.cfg.Constants.MaxSegmentSpanHours)
+		engine = "rollup"
+	} else {
+		q, err = concurrency.BuildChartQuery(req, s.cfg.Constants.Database, s.cfg.Constants.MaxSegmentSpanHours)
+	}
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	span.SetAttributes(otelx.StringAttr("engine", engine))
 
 	key := preflight.KeyFromString(q.CacheKey)
 	type result struct {
-		SQL     string           `json:"sql,omitempty"`
-		Rows    []map[string]any `json:"rows"`
-		Peak    any              `json:"peak,omitempty"`
-		Avg     any              `json:"avg,omitempty"`
-		CacheKey string          `json:"cache_key"`
+		SQL      string           `json:"sql,omitempty"`
+		Rows     []map[string]any `json:"rows"`
+		Peak     any              `json:"peak,omitempty"`
+		Avg      any              `json:"avg,omitempty"`
+		CacheKey string           `json:"cache_key"`
+		Engine   string           `json:"engine"`
 	}
 
 	out, err := preflight.Do(ctx, s.preflight, key, func(ctx context.Context) (result, error) {
@@ -201,6 +214,7 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	span.SetAttributes(otelx.IntAttr("result_rows", len(out.Rows)))
+	out.Engine = engine
 	// Expose SQL only when explicitly requested (debug).
 	if r.URL.Query().Get("debug") == "1" {
 		out.SQL = q.SQL

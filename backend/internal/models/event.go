@@ -73,6 +73,20 @@ type MinuteDelta struct {
 	Delta     int64
 }
 
+// WideDelta is one sweep-line edge for the optional denormalized rollup
+// (concurrency_minute_serving): dimensions ride on the row instead of a segment_id.
+type WideDelta struct {
+	Minute           time.Time
+	Platform         string
+	Country          string
+	ContentID        uint64
+	AppVersion       string
+	AudioLanguage    string
+	SubtitleLanguage string
+	PlayerVersion    string
+	Delta            int64
+}
+
 // Close reasons (ACTIVE_INTERVAL_LOGIC Step 2).
 const (
 	CloseReasonPause       = "pause"
