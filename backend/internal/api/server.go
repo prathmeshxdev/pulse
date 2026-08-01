@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -60,6 +61,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /ping", s.handleHealth)
 	s.mux.HandleFunc("POST /api/v1/concurrency/chart", s.handleChart)
 	s.mux.HandleFunc("POST /api/v1/concurrency/breakdown", s.handleBreakdown)
+	s.mux.HandleFunc("GET /api/v1/concurrency/live", s.handleLive)
 	s.mux.HandleFunc("GET /api/v1/schema/dimensions", s.handleDimensions)
 	s.mux.HandleFunc("GET /api/v1/schema/values", s.handleValues)
 	s.mux.HandleFunc("GET /api/v1/schema/window", s.handleWindow)
@@ -110,6 +112,48 @@ func (s *Server) handleValues(w http.ResponseWriter, r *http.Request) {
 		vals = append(vals, row["v"])
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"dimension": dim, "values": vals})
+}
+
+// handleLive returns real-time "active viewers now" from the MV-maintained
+// session_live_state (updates on every insert; idempotent + late-tolerant).
+// "now" defaults to the data watermark (max event ts); a true stream would use now().
+// ?by=platform|country returns the live count per dimension value.
+func (s *Server) handleLive(w http.ResponseWriter, r *http.Request) {
+	db := s.cfg.Constants.Database
+	grace := s.cfg.Constants.HeartbeatGraceSec
+	by := r.URL.Query().Get("by")
+
+	// Merge per-session state, then apply the active predicate at watermark T.
+	base := "SELECT video_session_id, maxMerge(closed) AS closed, argMaxMerge(fg) AS fg, " +
+		"argMaxMerge(playing) AS playing, maxIfMerge(last_hb) AS last_hb, " +
+		"argMaxMerge(platform) AS platform, argMaxMerge(country) AS country " +
+		"FROM " + db + ".session_live_state GROUP BY video_session_id"
+	active := fmt.Sprintf("NOT closed AND fg=1 AND playing=1 AND dateDiff('second', last_hb, T) <= %d", grace)
+	twith := "WITH (SELECT max(event_timestamp) FROM " + db + ".raw_events) AS T "
+
+	var sql string
+	if by == "platform" || by == "country" {
+		sql = twith + "SELECT " + by + " AS value, countIf(" + active + ") AS active FROM (" + base +
+			") GROUP BY value HAVING active > 0 ORDER BY active DESC LIMIT 20 FORMAT JSONEachRow"
+	} else {
+		sql = twith + "SELECT countIf(" + active + ") AS active_now, countIf(NOT closed) AS open_sessions FROM (" +
+			base + ") FORMAT JSONEachRow"
+	}
+	rows, err := chclient.QueryMaps(r.Context(), s.ch, sql)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if by != "" {
+		writeJSON(w, http.StatusOK, map[string]any{"by": by, "rows": rows})
+		return
+	}
+	out := map[string]any{"active_now": 0, "open_sessions": 0}
+	if len(rows) == 1 {
+		out["active_now"] = rows[0]["active_now"]
+		out["open_sessions"] = rows[0]["open_sessions"]
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
