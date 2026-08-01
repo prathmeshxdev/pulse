@@ -1,41 +1,49 @@
-# ClickStack — pipeline observability
+# ClickStack — OTLP traces → ClickHouse Cloud
 
-Satisfies the "meaningfully integrate ClickStack" requirement by instrumenting
-the **real serving path**: every `POST /api/v1/concurrency/chart` emits an
-OpenTelemetry span to ClickStack (HyperDX), carrying `grain`, `metric`,
-`filters`, `result_rows`, and error status. Query latency, throughput, and error
-rate are then charted in HyperDX — the same "what your queries do" signal the
-problem's query-performance criterion asks for, observed live rather than
-asserted.
+Pulse emits OpenTelemetry spans from the API (`concurrency.chart`) and batch
+commands (`loadraw`, `build_segments`, `pipeline`). The **ClickStack Cloud
+collector** forwards them to your ClickHouse Cloud service — same pattern as
+using Cloud for data instead of a local HyperDX stack.
 
-## Why this is meaningful, not superficial
-
-- It observes the **correctness path** (the chart query compiler), not a side
-  service — spans wrap the exact SQL the dashboard and benchmarks run.
-- Combined with `evidence/query_log.json` (read_rows / bytes / duration from
-  `system.query_log`), you get both the app-side span and the DB-side cost.
-- It is the primary integration the plan recommends because it doubles as
-  evidence for the separately-scored query-performance criterion.
-
-## Run
+## Run (Podman / Docker)
 
 ```bash
-docker compose up -d                       # HyperDX UI on :8081, OTLP on :4318
-# start the API pointed at it:
-cd ../backend
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 \
-CLICKHOUSE_DSN="$CLICKHOUSE_DSN" PREFLIGHT_ENABLED=false go run ./cmd/server
-# drive some queries from the dashboard, then open http://localhost:8080
-# and look at the `pulse-concurrency-api` service → span `concurrency.chart`.
+# From repo root — derives observability.env + librechat/.env from CLICKHOUSE_DSN:
+export ANTHROPIC_API_KEY   # optional, for LibreChat only
+./clickhouse/scripts/sync_librechat_env.sh
+
+podman-compose --profile observability up -d   # OTLP :4317 / :4318
+
+# Point Pulse at the collector:
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 podman-compose up -d backend frontend redis
 ```
 
-Opt-in and safe: with `OTEL_EXPORTER_OTLP_ENDPOINT` unset the tracer is a no-op
-and the server behaves exactly as before; if the endpoint is set but ClickStack
-is down, spans batch and fail silently — requests are never blocked (verified).
+Equivalent one-liner (manual):
 
-## What to show judges
+```bash
+podman run -d --name pulse-clickstack \
+  -e CLICKHOUSE_ENDPOINT="https://YOUR.host.clickhouse.cloud:8443" \
+  -e CLICKHOUSE_USER="default" \
+  -e CLICKHOUSE_PASSWORD="YOUR_PASSWORD" \
+  -p 4317:4317 -p 4318:4318 \
+  clickhouse/clickstack-otel-collector:latest
+```
 
-- HyperDX: `concurrency.chart` span duration distribution and error rate, split
-  by `grain` / `filters`.
-- Cross-reference with `system.query_log` (rows read per query) for the
-  DB-side story.
+## View metrics in ClickHouse Cloud
+
+Traces land in ClickStack-managed tables on your Cloud service. In the SQL
+console, try:
+
+```sql
+SHOW TABLES LIKE '%otel%';
+SELECT * FROM system.tables WHERE name ILIKE '%trace%' OR name ILIKE '%span%';
+```
+
+Then explore span duration / service name (`pulse-concurrency-api`) once you've
+driven a few chart queries with `OTEL_EXPORTER_OTLP_ENDPOINT` set.
+
+## Local HyperDX (legacy)
+
+`clickstack/docker-compose.yml` still runs the all-in-one HyperDX UI on :8081 for
+local-only demos. Prefer the Cloud collector above for hackathon parity with
+ClickHouse Cloud.

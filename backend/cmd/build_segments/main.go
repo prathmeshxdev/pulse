@@ -13,6 +13,7 @@ import (
 	"github.com/prathmeshxdev/pulse/internal/csvload"
 	"github.com/prathmeshxdev/pulse/internal/deltas"
 	"github.com/prathmeshxdev/pulse/internal/models"
+	"github.com/prathmeshxdev/pulse/internal/otelx"
 	"github.com/prathmeshxdev/pulse/internal/segments"
 )
 
@@ -84,10 +85,24 @@ func main() {
 	}
 
 	if *dsn != "" {
-		if err := loadClickHouse(*dsn, cfg.Database, segs, drows, *rebuild); err != nil {
+		ctx := context.Background()
+		shutdown := otelx.InitCLI(ctx)
+		defer func() { _ = shutdown(ctx) }()
+		ctx, span := otelx.Start(ctx, "build_segments",
+			otelx.StringAttr("input", *inPath),
+			otelx.BoolAttr("rebuild", *rebuild),
+		)
+		defer span.End()
+
+		if err := loadClickHouse(ctx, *dsn, cfg.Database, segs, drows, *rebuild); err != nil {
 			fmt.Fprintf(os.Stderr, "clickhouse load: %v\n", err)
 			os.Exit(1)
 		}
+		span.SetAttributes(
+			otelx.Int64Attr("events", int64(len(events))),
+			otelx.Int64Attr("segments", int64(len(segs))),
+			otelx.Int64Attr("deltas", int64(len(drows))),
+		)
 		fmt.Printf("clickhouse: inserted %d segments + %d deltas into %s\n", len(segs), len(drows), cfg.Database)
 	}
 
@@ -100,8 +115,7 @@ func main() {
 // load is idempotent AND never exposes an empty partition to concurrent queries.
 // With rebuild=false it appends (segments dedup by ReplacingMergeTree version;
 // deltas would double on a rerun — only use for genuinely new data).
-func loadClickHouse(dsn, database string, segs []models.Segment, drows []models.MinuteDelta, rebuild bool) error {
-	ctx := context.Background()
+func loadClickHouse(ctx context.Context, dsn, database string, segs []models.Segment, drows []models.MinuteDelta, rebuild bool) error {
 	conn, err := chclient.Connect(ctx, dsn)
 	if err != nil {
 		return err

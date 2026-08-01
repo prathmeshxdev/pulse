@@ -19,6 +19,11 @@ counts as active).
   dimension columns: `platform, country, content_id, app_version,
   audio_language, subtitle_language, player_version` (+ `segment_start`,
   `segment_end`).
+- `sony_liv.properties_key_mappings` — catalog of dynamic JSON keys under
+  `properties` (from CSV extras). Query to discover filterable keys:
+  `SELECT arrayJoin(mapKeys(path_types)) AS key FROM sony_liv.properties_key_mappings LIMIT 50`.
+  Filter dynamic dims as `properties.<key>` on `session_active_segments` (cast
+  using the type in `path_types`, e.g. `toFloat64(properties.my_metric)`).
 - `sony_liv.content_dict` — `dictGet('sony_liv.content_dict','video_type',content_id)`
   etc. for `title, video_type, category`.
 

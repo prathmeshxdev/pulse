@@ -36,9 +36,17 @@ cd frontend && npm install && npm run dev   # http://localhost:5173 (proxies /ap
 
 Or everything in containers (Cloud DSN in `.env`): `docker compose up backend frontend redis`. A local ClickHouse for dev: `docker compose --profile local up`.
 
-Incremental / open-session demo (truncate-and-replay): `clickhouse/scripts/replay.sh <raw.csv> <watermark_epoch_ms>`.
+**Observability + chat (optional):**
 
-Conversational layer: see [`librechat/`](librechat/) (`docker compose up -d`, then attach the ClickHouse MCP tool to an agent).
+```bash
+clickhouse/scripts/setup_integrations.sh          # ClickStack :8081 + LibreChat :3080 + MCP :8001
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 docker compose up backend frontend redis
+clickhouse/scripts/smoke_integrations.sh          # verify API, CH, OTLP, MCP
+```
+
+See [`clickstack/`](clickstack/) and [`librechat/`](librechat/) for details.
+
+Incremental / open-session demo (truncate-and-replay): `clickhouse/scripts/replay.sh <raw.csv> <watermark_epoch_ms>`.
 
 The pipeline is pure Go over the native protocol, so steps 1–4 work against ClickHouse Cloud with no `clickhouse-client` install.
 

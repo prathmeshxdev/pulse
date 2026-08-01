@@ -1,0 +1,46 @@
+# LiteLLM proxy — Langfuse-traced passthrough to corp upstream (LITELLM_UPSTREAM_URL in .env).
+# LibreChat → this proxy (:4000) → upstream LiteLLM → models
+#
+# Requires in env: ANTHROPIC_API_KEY, LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST
+# Run: clickhouse/scripts/run_litellm.sh  OR  podman-compose --profile chat up litellm
+
+model_list:
+  # Passthrough to corp LiteLLM — model_name must match upstream allow-list.
+  - model_name: claude-sonnet-5
+    litellm_params:
+      model: openai/claude-sonnet-5
+      api_base: os.environ/LITELLM_UPSTREAM_URL
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  - model_name: kimi-k2.5
+    litellm_params:
+      model: openai/kimi-k2.5
+      api_base: os.environ/LITELLM_UPSTREAM_URL
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  - model_name: gemini-3.1-flash-lite
+    litellm_params:
+      model: openai/gemini-3.1-flash-lite
+      api_base: os.environ/LITELLM_UPSTREAM_URL
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+litellm_settings:
+  master_key: sk-pulse-litellm-local
+  drop_params: true
+  success_callback: ["langfuse"]
+  failure_callback: ["langfuse"]
+  # Best-practice tags for Pulse (low-cardinality — filter dashboards by these).
+  langfuse_default_tags:
+    - pulse
+    - librechat
+    - concurrency-agent
+
+# LiteLLM reads callback creds from these (os.environ/* resolves at startup).
+environment_variables:
+  LANGFUSE_PUBLIC_KEY: os.environ/LANGFUSE_PUBLIC_KEY
+  LANGFUSE_SECRET_KEY: os.environ/LANGFUSE_SECRET_KEY
+  LANGFUSE_HOST: os.environ/LANGFUSE_HOST
+  LANGFUSE_BASE_URL: os.environ/LANGFUSE_HOST
+
+general_settings:
+  master_key: sk-pulse-litellm-local

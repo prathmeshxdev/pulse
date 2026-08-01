@@ -1,20 +1,40 @@
-# LibreChat config — registers the ClickHouse MCP server so agents can query
-# the serving layer. See https://www.librechat.ai/docs/configuration/librechat_yaml
+# LibreChat config — MCP + optional LiteLLM custom endpoint.
+# LLM URL/key: set LITELLM_BASE_URL + LITELLM_API_KEY in root .env (gitignored),
+# then run clickhouse/scripts/sync_librechat_env.sh — never commit corp proxy URLs.
 version: 1.2.1
+
+mcpSettings:
+  allowedAddresses:
+    - "clickhouse-mcp:8001"
+
+interface:
+  modelSelect: true
+  parameters: true
+  presets: true
+  mcpServers:
+    use: true
+    share: false
+    create: false
+    public: false
+
+endpoints:
+  custom:
+    - name: "LiteLLM"
+      apiKey: "sk-pulse-litellm-local"
+      baseURL: "${LITELLM_BASE_URL}"
+      models:
+        default: ["claude-sonnet-5"]
+        fetch: true
+      titleConvo: true
+      titleModel: "claude-sonnet-5"
+      summarize: false
+      modelDisplayLabel: "LiteLLM"
 
 mcpServers:
   clickhouse:
     type: sse
     url: http://clickhouse-mcp:8001/sse
-    # Surfaced to the model as a tool group; keep the description tight so the
-    # agent reaches for it on concurrency questions.
     description: >
       Read-only ClickHouse access to the Sony LIV concurrency serving layer
       (session_active_segments, minute_deltas, content_dict). Use for peak/avg
       concurrency questions with dimension filters.
-
-interface:
-  # Keep it focused on the analytics use case.
-  modelSelect: true
-  parameters: true
-  presets: true

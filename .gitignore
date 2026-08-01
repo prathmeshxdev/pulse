@@ -19,3 +19,9 @@ backend/bin/
 
 # Local secrets
 .env
+librechat/.env
+librechat/librechat.runtime.yaml
+observability.env
+.langfuse-upstream/
+.langfuse-skills-repo/
+litellm/certs/

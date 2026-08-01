@@ -1,9 +1,23 @@
-# Pulse — local run. Backend + frontend always; Redis for the preflight cache;
-# a local ClickHouse only under the "local" profile (omit it and set
-# CLICKHOUSE_DSN to your ClickHouse Cloud instance instead).
+# Pulse — local run against ClickHouse Cloud (set CLICKHOUSE_DSN in .env).
 #
-#   Cloud:  set CLICKHOUSE_DSN in .env, then:  docker compose up backend frontend redis
-#   Local:  docker compose --profile local up
+#   Core (API + dashboard + Redis):
+#     podman-compose up backend frontend redis
+#
+#   + ClickStack observability (OTLP :4318 → ClickHouse Cloud):
+#     ./clickhouse/scripts/sync_librechat_env.sh   # writes observability.env
+#     podman-compose --profile observability up -d
+#     # OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+#
+#   + LibreChat conversational layer (UI :3080, MCP :8001):
+#     ./clickhouse/scripts/sync_librechat_env.sh   # once
+#     podman-compose --profile chat up -d
+#
+#   Everything:
+#     podman-compose --profile full up -d
+#
+#   Local ClickHouse (dev only, not Cloud):
+#     docker compose --profile local up
+
 services:
   clickhouse:
     image: clickhouse/clickhouse-server:25.3
@@ -21,18 +35,94 @@ services:
     ports:
       - "6379:6379"
 
+  clickstack:
+    image: clickhouse/clickstack-otel-collector:latest
+    profiles: ["observability", "full"]
+    restart: unless-stopped
+    env_file:
+      - ./observability.env
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP  ← OTEL_EXPORTER_OTLP_ENDPOINT target
+
+  librechat-mongodb:
+    image: mongo:7
+    profiles: ["chat", "full"]
+    restart: unless-stopped
+    volumes:
+      - librechat-mongo:/data/db
+
+  clickhouse-mcp:
+    image: mcp/clickhouse:latest
+    profiles: ["chat", "full"]
+    restart: unless-stopped
+    env_file:
+      - ./librechat/.env
+    environment:
+      CLICKHOUSE_READONLY: "1"
+      CLICKHOUSE_MCP_SERVER_TRANSPORT: sse
+      CLICKHOUSE_MCP_BIND_HOST: 0.0.0.0
+      CLICKHOUSE_MCP_BIND_PORT: "8001"
+    ports:
+      - "8001:8001"
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    profiles: ["chat", "full"]
+    restart: unless-stopped
+    # Langfuse + upstream keys come from sync_librechat_env.sh → librechat/.env.
+    # Do not override with ${VAR:-} here — empty compose substitution wipes env_file values.
+    env_file:
+      - ./librechat/.env
+    environment:
+      # macOS Podman: mount exported keychain bundle (see export_macos_certs.sh).
+      SSL_CERT_FILE: /certs/ca-bundle.pem
+      REQUESTS_CA_BUNDLE: /certs/ca-bundle.pem
+    volumes:
+      - ./litellm/litellm-config.yaml:/app/config.yaml:ro
+      - ./litellm/certs/ca-bundle.pem:/certs/ca-bundle.pem:ro
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--host", "0.0.0.0"]
+    ports:
+      - "4000:4000"
+
+  librechat:
+    image: ghcr.io/danny-avila/librechat:latest
+    profiles: ["chat", "full"]
+    restart: unless-stopped
+    depends_on:
+      - librechat-mongodb
+      - clickhouse-mcp
+      - litellm
+    env_file:
+      - ./librechat/.env
+    ports:
+      - "3080:3080"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3080
+      MONGO_URI: mongodb://librechat-mongodb:27017/LibreChat
+      ALLOW_REGISTRATION: "true"
+      ALLOW_UNVERIFIED_EMAIL_LOGIN: "true"
+      # Only show LiteLLM custom endpoint (skip broken in-container Anthropic).
+      ENDPOINTS: custom
+      LITELLM_BASE_URL: ${LITELLM_BASE_URL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./librechat/librechat.runtime.yaml:/app/librechat.yaml:ro
+      - ./librechat/system_prompt.md:/app/pulse_system_prompt.md:ro
+
   backend:
     build: ./backend
     ports:
       - "8080:8080"
     environment:
       ADDR: ":8080"
-      # Cloud DSN wins if set; else falls back to the local clickhouse service.
       CLICKHOUSE_DSN: ${CLICKHOUSE_DSN:-clickhouse://default:@clickhouse:9000/sony_liv}
       REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
       PREFLIGHT_ENABLED: ${PREFLIGHT_ENABLED:-true}
       PREFLIGHT_CACHE_TTL: ${PREFLIGHT_CACHE_TTL:-1m}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      # Always use in-compose collector hostname (localhost only works on host `go run`).
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://clickstack:4318
     depends_on:
       - redis
 
@@ -45,3 +135,4 @@ services:
 
 volumes:
   ch-data:
+  librechat-mongo:

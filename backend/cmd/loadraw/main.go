@@ -14,6 +14,7 @@ import (
 	"github.com/prathmeshxdev/pulse/internal/chclient"
 	"github.com/prathmeshxdev/pulse/internal/config"
 	"github.com/prathmeshxdev/pulse/internal/csvload"
+	"github.com/prathmeshxdev/pulse/internal/otelx"
 )
 
 func main() {
@@ -42,6 +43,14 @@ func main() {
 	}
 
 	ctx := context.Background()
+	shutdown := otelx.InitCLI(ctx)
+	defer func() { _ = shutdown(ctx) }()
+	ctx, span := otelx.Start(ctx, "loadraw",
+		otelx.StringAttr("input", *inPath),
+		otelx.BoolAttr("rebuild", *rebuild),
+	)
+	defer span.End()
+
 	conn, err := chclient.Connect(ctx, *dsn)
 	must(err, "connect")
 	defer conn.Close()
@@ -59,6 +68,7 @@ func main() {
 	} else {
 		must(chclient.InsertRawEvents(ctx, conn, cfg.Database+".raw_events", events), "insert raw_events")
 	}
+	span.SetAttributes(otelx.Int64Attr("events", int64(len(events))))
 	fmt.Printf("loaded %d raw events into %s.raw_events (rebuild=%v)\n", len(events), cfg.Database, *rebuild)
 }
 

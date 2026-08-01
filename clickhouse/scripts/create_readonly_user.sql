@@ -14,5 +14,6 @@ CREATE USER IF NOT EXISTS pulse_readonly IDENTIFIED BY 'Pulse_ro_demo_2026' SETT
 GRANT SELECT  ON sony_liv.session_active_segments TO pulse_readonly;
 GRANT SELECT  ON sony_liv.minute_deltas           TO pulse_readonly;
 GRANT SELECT  ON sony_liv.content_metadata        TO pulse_readonly;
+GRANT SELECT  ON sony_liv.properties_key_mappings TO pulse_readonly;
 GRANT dictGet ON sony_liv.content_dict            TO pulse_readonly;
 -- Deliberately NOT granted: SELECT on sony_liv.raw_events (the unmodeled log).

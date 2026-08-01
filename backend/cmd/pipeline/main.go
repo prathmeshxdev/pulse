@@ -9,6 +9,7 @@ import (
 
 	"github.com/prathmeshxdev/pulse/internal/chclient"
 	"github.com/prathmeshxdev/pulse/internal/config"
+	"github.com/prathmeshxdev/pulse/internal/otelx"
 )
 
 // pipeline applies DDL migrations and optional SYSTEM RELOAD DICTIONARY.
@@ -21,6 +22,14 @@ func main() {
 	flag.Parse()
 
 	ctx := context.Background()
+	shutdown := otelx.InitCLI(ctx)
+	defer func() { _ = shutdown(ctx) }()
+	ctx, span := otelx.Start(ctx, "pipeline.migrate",
+		otelx.BoolAttr("drop", *dropDB),
+		otelx.BoolAttr("reload_dict", *reloadDict),
+	)
+	defer span.End()
+
 	conn, err := chclient.Connect(ctx, *dsn)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "connect: %v\n", err)
@@ -29,7 +38,7 @@ func main() {
 	defer conn.Close()
 
 	if *execSQL != "" {
-		if err := conn.Exec(ctx, *execSQL); err != nil {
+		if err := execMulti(ctx, conn, *execSQL); err != nil {
 			fmt.Fprintf(os.Stderr, "exec: %v\n", err)
 			os.Exit(1)
 		}

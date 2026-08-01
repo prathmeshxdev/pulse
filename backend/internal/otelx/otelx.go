@@ -56,3 +56,16 @@ func Setup(ctx context.Context) (trace.Tracer, func(context.Context) error, bool
 func StringAttr(k, v string) attribute.KeyValue { return attribute.String(k, v) }
 func IntAttr(k string, v int) attribute.KeyValue { return attribute.Int(k, v) }
 func BoolAttr(k string, v bool) attribute.KeyValue { return attribute.Bool(k, v) }
+func Int64Attr(k string, v int64) attribute.KeyValue { return attribute.Int64(k, v) }
+
+// InitCLI configures OTel for batch commands (loadraw, build_segments, pipeline).
+// Returns a shutdown func that must be deferred.
+func InitCLI(ctx context.Context) func(context.Context) error {
+	_, shutdown, _ := Setup(ctx)
+	return shutdown
+}
+
+// Start begins a span on the global tracer (no-op when OTel is disabled).
+func Start(ctx context.Context, name string, attrs ...attribute.KeyValue) (context.Context, trace.Span) {
+	return otel.Tracer(serviceName).Start(ctx, name, trace.WithAttributes(attrs...))
+}

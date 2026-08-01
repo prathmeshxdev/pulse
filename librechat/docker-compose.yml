@@ -1,11 +1,10 @@
-# LibreChat + ClickHouse MCP — conversational layer over the serving layer.
-# "What was peak concurrency on Android in the last hour?" → the agent calls the
-# ClickHouse MCP server, which is pointed at your serving tables (read-only).
+# LibreChat + ClickHouse MCP — use root docker-compose instead.
 #
-# This does NOT fork LibreChat — it runs the published image and wires the
-# official ClickHouse MCP server (github.com/ClickHouse/mcp-clickhouse) via SSE.
+# Preferred: from repo root
+#   clickhouse/scripts/setup_integrations.sh
+#   docker compose --profile chat up -d
 #
-# Prereqs: copy .env.example → .env and fill CH creds + one LLM API key.
+# This sidecar compose still works if you cd into librechat/ and maintain .env here.
 services:
   mongodb:
     image: mongo:7
