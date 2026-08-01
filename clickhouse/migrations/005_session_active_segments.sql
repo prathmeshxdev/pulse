@@ -29,9 +29,9 @@ PARTITION BY toYYYYMMDD(segment_start)
 ORDER BY (segment_id)
 SETTINGS index_granularity = 8192;
 
--- Skip indexes (safe to re-run pipeline if they already exist — errors are ignorable).
+-- Skip indexes. IF NOT EXISTS keeps the migration idempotent on re-run.
 ALTER TABLE sony_liv.session_active_segments
-    ADD INDEX idx_session video_session_id TYPE bloom_filter(0.01) GRANULARITY 4;
+    ADD INDEX IF NOT EXISTS idx_session video_session_id TYPE bloom_filter(0.01) GRANULARITY 4;
 
 ALTER TABLE sony_liv.session_active_segments
-    ADD INDEX idx_seg_span (segment_start, segment_end) TYPE minmax GRANULARITY 4;
+    ADD INDEX IF NOT EXISTS idx_seg_span (segment_start, segment_end) TYPE minmax GRANULARITY 4;

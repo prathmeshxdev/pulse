@@ -1,0 +1,32 @@
+[
+  {
+    "name": "no_empty_segments",
+    "pass": true,
+    "detail": "0 segments with end\u003c=start"
+  },
+  {
+    "name": "no_segment_past_watermark",
+    "pass": true,
+    "detail": "max segment_end +0s vs watermark"
+  },
+  {
+    "name": "no_overlapping_segments",
+    "pass": true,
+    "detail": "0 overlaps"
+  },
+  {
+    "name": "segments_below_heartbeats",
+    "pass": true,
+    "detail": "32291 segments vs 843600 heartbeats"
+  },
+  {
+    "name": "no_negative_concurrency",
+    "pass": true,
+    "detail": "min concurrency 0"
+  },
+  {
+    "name": "filtered_peak_le_unfiltered",
+    "pass": true,
+    "detail": "platform=ANDROID_PHONE peak 1862 \u003c= unfiltered 2915"
+  }
+]

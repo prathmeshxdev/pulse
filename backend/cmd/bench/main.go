@@ -9,8 +9,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
@@ -127,10 +129,44 @@ func main() {
 		answers = append(answers, a)
 	}
 
+	ql := queryLogEvidence(ctx, conn, queryIDs)
 	writeJSON(filepath.Join(*outDir, "answers.json"), answers)
 	writeJSON(filepath.Join(*outDir, "parts.json"), partsEvidence(ctx, conn, cfg.Database))
-	writeJSON(filepath.Join(*outDir, "query_log.json"), queryLogEvidence(ctx, conn, queryIDs))
+	writeJSON(filepath.Join(*outDir, "query_log.json"), ql)
+	printPerf(ql)
 	fmt.Printf("wrote %s/{answers,parts,query_log}.json\n", *outDir)
+}
+
+// printPerf summarizes server-side execution from system.query_log — the fair
+// performance number (excludes client/network round-trip).
+func printPerf(rows []map[string]any) {
+	if len(rows) == 0 {
+		return
+	}
+	durs := make([]float64, 0, len(rows))
+	var maxRows float64
+	for _, r := range rows {
+		durs = append(durs, toF64(r["query_duration_ms"]))
+		if rr := toF64(r["read_rows"]); rr > maxRows {
+			maxRows = rr
+		}
+	}
+	sort.Float64s(durs)
+	q := func(p float64) float64 { return durs[int(math.Min(float64(len(durs)-1), p*float64(len(durs)))) ] }
+	fmt.Printf("server-side latency: p50=%.0fms p90=%.0fms max=%.0fms | max rows read=%.0f (n=%d)\n",
+		q(0.5), q(0.9), durs[len(durs)-1], maxRows, len(durs))
+}
+
+func toF64(v any) float64 {
+	switch t := v.(type) {
+	case float64:
+		return t
+	case int64:
+		return float64(t)
+	case uint64:
+		return float64(t)
+	}
+	return 0
 }
 
 // dataWindow reads the served time range so a spec needs no hard-coded dates.
@@ -196,9 +232,9 @@ func partsEvidence(ctx context.Context, conn driver.Conn, db string) any {
 	return rows
 }
 
-func queryLogEvidence(ctx context.Context, conn driver.Conn, ids []string) any {
+func queryLogEvidence(ctx context.Context, conn driver.Conn, ids []string) []map[string]any {
 	if len(ids) == 0 {
-		return []any{}
+		return nil
 	}
 	_ = conn.Exec(ctx, "SYSTEM FLUSH LOGS")
 	inList := ""
