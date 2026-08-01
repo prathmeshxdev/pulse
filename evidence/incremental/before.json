@@ -1,0 +1,76 @@
+[
+  {
+    "case": {
+      "name": "unfiltered_minute",
+      "grain": "minute",
+      "metric": "summary"
+    },
+    "query_id": "pulse-bench-0",
+    "peak": 2915,
+    "avg": 8.020441729323307,
+    "row_count": 1,
+    "latency_ms": 93.949
+  },
+  {
+    "case": {
+      "name": "unfiltered_hour",
+      "grain": "hour",
+      "metric": "summary"
+    },
+    "query_id": "pulse-bench-1",
+    "peak": 2915,
+    "avg": 8.020441729323307,
+    "row_count": 1,
+    "latency_ms": 89.973
+  },
+  {
+    "case": {
+      "name": "unfiltered_day",
+      "grain": "day",
+      "metric": "summary"
+    },
+    "query_id": "pulse-bench-2",
+    "peak": 2915,
+    "avg": 8.020441729323307,
+    "row_count": 1,
+    "latency_ms": 90.248
+  },
+  {
+    "case": {
+      "name": "platform_ANDROID_PHONE",
+      "grain": "minute",
+      "metric": "summary",
+      "filters": [
+        {
+          "dimension": "platform",
+          "op": "eq",
+          "value": "ANDROID_PHONE"
+        }
+      ]
+    },
+    "query_id": "pulse-bench-3",
+    "peak": 1862,
+    "avg": 5.336524906015038,
+    "row_count": 1,
+    "latency_ms": 115.717
+  },
+  {
+    "case": {
+      "name": "country_india",
+      "grain": "hour",
+      "metric": "summary",
+      "filters": [
+        {
+          "dimension": "country",
+          "op": "eq",
+          "value": "india"
+        }
+      ]
+    },
+    "query_id": "pulse-bench-4",
+    "peak": 2915,
+    "avg": 8.020441729323307,
+    "row_count": 1,
+    "latency_ms": 176.68
+  }
+]
