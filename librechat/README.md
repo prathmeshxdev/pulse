@@ -7,16 +7,18 @@ queries ClickHouse through the official [ClickHouse MCP server](https://github.c
 
 ## Setup
 
-1. **Create a read-only ClickHouse user** (guardrail — the agent should never
-   write or read `raw_events` at scale):
+1. **Create the read-only ClickHouse user** — run
+   [`../clickhouse/scripts/create_readonly_user.sql`](../clickhouse/scripts/create_readonly_user.sql).
+   This is an **enforced** guardrail, verified on Cloud:
 
-   ```sql
-   CREATE USER pulse_readonly IDENTIFIED BY 'change-me' SETTINGS readonly = 1;
-   GRANT SELECT ON sony_liv.session_active_segments TO pulse_readonly;
-   GRANT SELECT ON sony_liv.minute_deltas          TO pulse_readonly;
-   GRANT dictGet ON sony_liv.content_dict          TO pulse_readonly;
-   -- deliberately NOT granting SELECT on sony_liv.raw_events
-   ```
+   | Query | Result |
+   |---|---|
+   | `SELECT … FROM minute_deltas` | ✅ allowed |
+   | `SELECT … FROM raw_events` | ❌ `ACCESS_DENIED` (no grant) |
+   | any write / `TRUNCATE` | ❌ `ACCESS_DENIED` (`readonly = 1`) |
+
+   So even if the model is prompted adversarially, it physically cannot read the
+   raw log or mutate the serving layer.
 
 2. `cp .env.example .env` and fill CH creds + one LLM API key.
 
