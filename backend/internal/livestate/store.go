@@ -237,3 +237,33 @@ func (s *Store) ApplyEvent(ctx context.Context, e models.RawEvent, version uint6
 	}
 	return closed, nil
 }
+
+// ApplyEventAndSnapshot is ApplyEvent plus the session's current in-progress
+// segment (see Accumulator.OpenSnapshot) — for a caller that wants to write a
+// "still active" row on every event rather than wait for the segment to
+// close. The snapshot's version is the event's own timestamp (seconds), not
+// the accumulator's session-scoped version: it must increase monotonically
+// across successive open snapshots for the SAME segment (guaranteed, since
+// events are processed in time order) and stay below the eventual close's
+// version so the real close always wins under FINAL.
+//
+// ponytail: relies on the close version (caller-supplied, typically
+// streamd's process-start wall clock) staying above any live event
+// timestamp — true for a historical replay (this dataset) or a streamd run
+// shorter than "now minus event time." A streamd that runs for days against
+// truly-live events would need per-event-timestamp versioning on the close
+// path too; not needed for this dataset.
+func (s *Store) ApplyEventAndSnapshot(ctx context.Context, e models.RawEvent, version uint64) (closed []models.Segment, open *models.Segment, err error) {
+	acc, existed, err := s.Load(ctx, e.VideoSessionID, version)
+	if err != nil {
+		return nil, nil, err
+	}
+	closed = acc.Apply(e)
+	if err := s.Save(ctx, e.VideoSessionID, acc, e.EventTimestamp, existed); err != nil {
+		return closed, nil, err
+	}
+	if seg, ok := acc.OpenSnapshot(uint64(e.EventTimestamp.Unix())); ok {
+		open = &seg
+	}
+	return closed, open, nil
+}

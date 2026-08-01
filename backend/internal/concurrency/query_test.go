@@ -63,6 +63,35 @@ func TestBuildChartQuery_UnknownDimension(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// TestBuildChartQuery_OpenEdgesCorrection locks in the two properties that
+// silently regress the live-open correction if lost: filtering on
+// close_reason (not is_final, which means something else entirely — see the
+// doc comment in query.go) and mirroring deltas.EmitAnyOverlap's exact
+// minus-edge rounding. Both were the root cause of real overcounts during
+// benchmarking (see cmd/bench_livecorrection history) before landing here.
+func TestBuildChartQuery_OpenEdgesCorrection(t *testing.T) {
+	q, err := BuildChartQuery(Request{
+		Start:  time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
+		End:    time.Date(2026, 1, 16, 0, 0, 0, 0, time.UTC),
+		Grain:  GrainMinute,
+		Metric: MetricSummary,
+		Filters: []filters.Filter{
+			{Dimension: "platform", Op: "eq", Value: "ANDROID"},
+		},
+	}, "sony_liv", 72)
+	require.NoError(t, err)
+	assert.Contains(t, q.SQL, "open_edges")
+	assert.Contains(t, q.SQL, "close_reason = ''")
+	assert.NotContains(t, q.SQL, "is_final = 0")
+	assert.NotContains(t, q.SQL, "is_final=0")
+	assert.Contains(t, q.SQL, "subtractMilliseconds(segment_end, 1)")
+	// Dimension filters apply directly to open_edges (typed columns), not
+	// just via the segment_id semi-join used for the historical side.
+	assert.Contains(t, q.SQL, "platform = 'ANDROID'")
+	countPlatformPreds := strings.Count(q.SQL, "platform = 'ANDROID'")
+	assert.GreaterOrEqual(t, countPlatformPreds, 2, "platform predicate should appear in both sel and open_edges")
+}
+
 func TestBuildChartQuery_TimeseriesHour(t *testing.T) {
 	q, err := BuildChartQuery(Request{
 		Start:  time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),

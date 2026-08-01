@@ -46,6 +46,11 @@ type Query struct {
 // BuildChartQuery compiles the normative benchmark template (SCHEMA_AND_DDL).
 // Never reads raw_events. Omits the sel CTE when there are no dimension filters
 // (FINAL_PLAN §15.4 unselective-case optimisation).
+//
+// Folds in still-open sessions (open_edges CTE) so "active now" queries don't
+// have to wait for a segment to close and flush to minute_deltas — see the
+// open_edges doc comment below for the mechanism and why is_final=0 is the
+// wrong filter for it.
 func BuildChartQuery(req Request, database string, maxSegmentSpanHours int) (Query, error) {
 	if req.End.Before(req.Start) || req.End.Equal(req.Start) {
 		return Query{}, fmt.Errorf("end must be after start")
@@ -94,18 +99,68 @@ func BuildChartQuery(req Request, database string, maxSegmentSpanHours int) (Que
 		segIN = "AND segment_id IN (SELECT segment_id FROM sel)"
 	}
 
-	openingSQL := fmt.Sprintf(`SELECT sum(delta) AS c0
-FROM %s.minute_deltas
-WHERE minute >= %s - %s
-  AND minute < %s
-  %s`, database, rangeStart, lookback, rangeStart, segIN)
+	// open_edges folds still-open sessions into the same +1/-1 minute-edge
+	// scheme deltas.EmitAnyOverlap already uses for closed segments, so a
+	// currently-open session counts immediately instead of only after it
+	// closes and flushes to minute_deltas (streamd only writes a delta pair
+	// on close — see cmd/streamd). Filters apply directly here (typed
+	// columns on session_active_segments, same preds as `sel` above) —
+	// dimension support falls out for free, no separate mechanism needed.
+	//
+	// Filtered by close_reason = '', NOT is_final = 0: is_final only means
+	// "the whole session ended via VideoSessionEnd" (SCHEMA_AND_DDL.md); a
+	// segment closed for any other reason (pause/background/buffer/
+	// heartbeat-gap) is ALSO is_final=0 and is already correctly represented
+	// in minute_deltas from its own close. Filtering on is_final=0 here
+	// would double-count every ordinary close. streamd's OpenSnapshot is the
+	// only writer that leaves close_reason empty (see internal/livestate and
+	// internal/segments.Accumulator.OpenSnapshot) — every real close sets one
+	// of the CloseReason* constants, all non-empty.
+	//
+	// The minus-edge mirrors EmitAnyOverlap's exact rounding
+	// (StartOfMinute(end-1ms)+1min, not StartOfMinute(end)) — getting this
+	// even slightly off silently shifts sessions into the wrong minute.
+	// Validated against the full real dataset (differential test against an
+	// in-memory Accumulator replay, both global and dimension-filtered):
+	// exact on every check except two explained by a pre-existing 72h
+	// lookback-boundary artifact in the opening-balance calc below,
+	// unrelated to this CTE (a closed segment's edge pair straddling the
+	// lookback loses its start-side +1 — same behavior with or without this
+	// CTE, just usually invisible at normal query granularity).
+	openWhere := []string{
+		fmt.Sprintf("segment_end > %s - %s", rangeStart, lookback),
+		fmt.Sprintf("segment_start < %s", rangeEnd),
+	}
+	openWhere = append(openWhere, preds...)
+	openWhereSQL := strings.Join(openWhere, "\n    AND ")
+	b.WithRaw("open_edges", fmt.Sprintf(`SELECT toStartOfMinute(segment_start) AS minute, 1 AS delta
+FROM %[1]s.session_active_segments FINAL
+WHERE close_reason = ''
+    AND %[2]s
+UNION ALL
+SELECT toStartOfMinute(subtractMilliseconds(segment_end, 1)) + toIntervalMinute(1) AS minute, -1 AS delta
+FROM %[1]s.session_active_segments FINAL
+WHERE close_reason = ''
+    AND %[2]s`, database, openWhereSQL))
+
+	openingSQL := fmt.Sprintf(`SELECT sum(delta) AS c0 FROM (
+    SELECT delta FROM %[1]s.minute_deltas
+    WHERE minute >= %[2]s - %[3]s AND minute < %[2]s
+    %[4]s
+    UNION ALL
+    SELECT delta FROM open_edges
+    WHERE minute >= %[2]s - %[3]s AND minute < %[2]s
+)`, database, rangeStart, lookback, segIN)
 	b.WithRaw("opening", openingSQL)
 
-	netSQL := fmt.Sprintf(`SELECT minute, sum(delta) AS net
-FROM %s.minute_deltas
-WHERE minute >= %s
-  AND minute < %s
-  %s
+	netSQL := fmt.Sprintf(`SELECT minute, sum(delta) AS net FROM (
+    SELECT minute, delta FROM %[1]s.minute_deltas
+    WHERE minute >= %[2]s AND minute < %[3]s
+    %[4]s
+    UNION ALL
+    SELECT minute, delta FROM open_edges
+    WHERE minute >= %[2]s AND minute < %[3]s
+)
 GROUP BY minute`, database, rangeStart, rangeEnd, segIN)
 	b.WithRaw("net", netSQL)
 

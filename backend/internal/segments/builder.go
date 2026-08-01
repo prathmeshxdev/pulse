@@ -196,6 +196,27 @@ func (a *Accumulator) Finalize(watermark time.Time) []models.Segment {
 	return nil
 }
 
+// OpenSnapshot returns the in-progress segment as it stands right now, WITHOUT
+// closing it, so a caller (streamd) can write a "still active" row to
+// session_active_segments on every event instead of waiting for the segment
+// to actually close — trading "freshness = next close" for "freshness =
+// next event." SegmentEnd mirrors Active()/Finalize()'s own boundary
+// (lastKeepalive + grace); the real close, when it happens, uses a
+// later end and a higher version, so it naturally supersedes this row under
+// FINAL — no new column, no query change. Returns ok=false if there's
+// nothing open yet.
+func (a *Accumulator) OpenSnapshot(version uint64) (models.Segment, bool) {
+	st := &a.st
+	if !st.inActive || st.closed {
+		return models.Segment{}, false
+	}
+	end := st.lastKeepalive.Add(st.grace)
+	if !end.After(st.segmentStart) {
+		return models.Segment{}, false
+	}
+	return st.buildSegment(end, "", false, version), true
+}
+
 // Active reports whether the session is active at instant `at` — the live-count
 // predicate: in an open segment, not ended, and heartbeat-fresh within grace.
 func (a *Accumulator) Active(at time.Time) bool {
@@ -324,13 +345,12 @@ func (st *sessionState) openSegment(e models.RawEvent) {
 	st.dims = e
 }
 
-func (st *sessionState) closeSegment(end time.Time, reason string, isFinal bool, version uint64) models.Segment {
-	st.inActive = false
+func (st *sessionState) buildSegment(end time.Time, reason string, isFinal bool, version uint64) models.Segment {
 	final := uint8(0)
 	if isFinal {
 		final = 1
 	}
-	seg := models.Segment{
+	return models.Segment{
 		SegmentID:        SegmentID(st.dims.VideoSessionID, st.segmentStart),
 		VideoSessionID:   st.dims.VideoSessionID,
 		UserID:           st.dims.UserID,
@@ -347,7 +367,11 @@ func (st *sessionState) closeSegment(end time.Time, reason string, isFinal bool,
 		CloseReason:      reason,
 		Version:          version,
 	}
-	return seg
+}
+
+func (st *sessionState) closeSegment(end time.Time, reason string, isFinal bool, version uint64) models.Segment {
+	st.inActive = false
+	return st.buildSegment(end, reason, isFinal, version)
 }
 
 func eventLess(a, b models.RawEvent) bool { return EventLess(a, b) }

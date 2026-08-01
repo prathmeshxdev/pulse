@@ -126,7 +126,7 @@ func main() {
 			}
 		}
 
-		closedSegs, err := store.ApplyEvent(ctx, e, version)
+		closedSegs, openSeg, err := store.ApplyEventAndSnapshot(ctx, e, version)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "streamd: apply event for session %s: %v\n", e.VideoSessionID, err)
 			continue
@@ -138,6 +138,16 @@ func main() {
 				fmt.Fprintf(os.Stderr, "streamd: write finalized segments: %v\n", err)
 			}
 			finalized += len(closedSegs)
+		}
+		// Write the still-open segment on every event, not just on close, so
+		// "active now" queries against session_active_segments FINAL see this
+		// session immediately instead of waiting for it to end. Segment-table
+		// write only (no delta emission) — the close, when it happens, is what
+		// still drives minute_deltas, so this can't double-count.
+		if openSeg != nil {
+			if err := chclient.InsertSegments(ctx, conn, cfg.Database+".session_active_segments", []models.Segment{*openSeg}); err != nil {
+				fmt.Fprintf(os.Stderr, "streamd: write open segment snapshot: %v\n", err)
+			}
 		}
 
 		// Sweep on the REPLAYED (event-time) clock, not wall-clock: at
