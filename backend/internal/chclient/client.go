@@ -75,6 +75,13 @@ func parseDSN(dsn string) (*clickhouse.Options, error) {
 		},
 		Settings: clickhouse.Settings{
 			"max_execution_time": 60,
+			// session_active_segments is partitioned by toYYYYMMDD(segment_start)
+			// and its ReplacingMergeTree key is segment_id, which is derived from
+			// segment_start — so every version of a key lives in one partition.
+			// That precondition makes per-partition FINAL exact, so we let it skip
+			// the cross-partition merge (verified: 0 segment_ids span >1 partition,
+			// FINAL count and peak unchanged). Harmless for the other tables.
+			"do_not_merge_across_partitions_select_final": 1,
 		},
 		DialTimeout: 30 * time.Second,
 	}

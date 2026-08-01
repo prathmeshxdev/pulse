@@ -163,6 +163,20 @@ Why this is the right "dedupe in realtime":
 > Both keep the read path a plain `sum(delta) GROUP BY minute`, which is correct on
 > unmerged parts — so nothing ever waits on a merge.
 
+## 3b. ClickHouse best-practices alignment
+
+| Practice | What we do | Why |
+|---|---|---|
+| **Engine (Cloud)** | Plain `MergeTree`/`ReplacingMergeTree`/`SummingMergeTree` in DDL | Cloud transparently substitutes `Shared*` (verified: `SharedReplacingMergeTree(...)`), which *is* the replicated, shared-storage engine. Explicit `ReplicatedMergeTree` is unnecessary and discouraged on Cloud. |
+| **ORDER BY** | `minute_deltas (minute, segment_id)` — time first | Matches the `WHERE minute` range filter → partition + primary-index pruning (best practice: order by filter columns, moderate cardinality first). |
+| **ORDER BY (segments)** | `session_active_segments (segment_id)` | Forced by the engine: the ReplacingMergeTree dedup key **must** be `segment_id`. Ordering by dims instead would dedup wrongly. At ~32k rows a dim filter is a fast linear scan; skip indexes below cover it. |
+| **PARTITION BY** | `toYYYYMMDD(...)` on all fact tables | Used as a **data-management** tool (atomic `REPLACE PARTITION` idempotency), not as a query accelerator — exactly CH's stated purpose. Low partition count (days). At 100× with a long horizon, switch to monthly to avoid part proliferation. |
+| **LowCardinality** | All dimension columns | Best practice for low-distinct string dims. |
+| **Skip indexes** | `bloom_filter` on `video_session_id`, `minmax` on `(segment_start, segment_end)` | Speeds the reconcile/point lookups and the R9 overlap prune on the segment scan. |
+| **Codecs** | `minute` → `DoubleDelta,ZSTD`; deltas/ids → `ZSTD`; timestamps → `Delta,ZSTD` | Monotonic time + narrow ±1 deltas compress hard; standard CH time-series codecs. |
+| **FINAL** | `do_not_merge_across_partitions_select_final = 1` | Safe because a `segment_id`'s versions always share `segment_start` → one partition (verified: 0 spanning). Per-partition FINAL is then exact and cheaper. |
+| **Avoid `OPTIMIZE … FINAL`** | Never load-bearing | Reads use `sum(delta) GROUP BY` (merge-independent) and segment `FINAL` (cheap at this size); correctness never waits on a merge. |
+
 ## 4. Consumers
 
 | Consumer | Reads | Notes |
