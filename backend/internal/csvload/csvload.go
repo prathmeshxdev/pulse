@@ -83,6 +83,48 @@ func ReadCSV(path string) ([]models.RawEvent, error) {
 	return out, nil
 }
 
+// ReadContentCSV parses the content metadata CSV (content_id,title,video_type,category).
+func ReadContentCSV(path string) ([]models.Content, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	r := csv.NewReader(bufio.NewReader(f))
+	r.ReuseRecord = true
+	header, err := r.Read()
+	if err != nil {
+		return nil, err
+	}
+	idx := map[string]int{}
+	for i, h := range header {
+		idx[h] = i
+	}
+	for _, k := range []string{"content_id", "title", "video_type", "category"} {
+		if _, ok := idx[k]; !ok {
+			return nil, fmt.Errorf("missing column %s", k)
+		}
+	}
+	var out []models.Content
+	for {
+		rec, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		cid, _ := strconv.ParseUint(rec[idx["content_id"]], 10, 64)
+		out = append(out, models.Content{
+			ContentID: cid,
+			Title:     rec[idx["title"]],
+			VideoType: rec[idx["video_type"]],
+			Category:  rec[idx["category"]],
+		})
+	}
+	return out, nil
+}
+
 // ParseTS accepts epoch-ms (training CSV), epoch-s, or common RFC/SQL formats.
 func ParseTS(s string) (time.Time, error) {
 	if n, err := strconv.ParseInt(s, 10, 64); err == nil {

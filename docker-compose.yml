@@ -31,6 +31,7 @@ services:
       CLICKHOUSE_DSN: ${CLICKHOUSE_DSN:-clickhouse://default:@clickhouse:9000/sony_liv}
       REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
       PREFLIGHT_ENABLED: ${PREFLIGHT_ENABLED:-true}
+      PREFLIGHT_CACHE_TTL: ${PREFLIGHT_CACHE_TTL:-1m}
     depends_on:
       - redis
 

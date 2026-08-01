@@ -19,6 +19,14 @@ type RawEvent struct {
 	SessionStartEpoch time.Time
 }
 
+// Content is one row from the content metadata CSV → content_metadata.
+type Content struct {
+	ContentID uint64
+	Title     string
+	VideoType string
+	Category  string
+}
+
 // Signal is the classified event semantics (FINAL_PLAN §1.3).
 type Signal string
 

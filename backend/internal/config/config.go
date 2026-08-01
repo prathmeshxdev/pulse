@@ -113,7 +113,7 @@ func LoadServerConfig() ServerConfig {
 		ClickHouseDSN:     envOr("CLICKHOUSE_DSN", "clickhouse://default:@localhost:9000/sony_liv"),
 		RedisAddr:         envOr("REDIS_ADDR", "localhost:6379"),
 		PreflightEnabled:  envOr("PREFLIGHT_ENABLED", "true") == "true",
-		PreflightCacheTTL: durationOr("PREFLIGHT_CACHE_TTL", 5*time.Minute),
+		PreflightCacheTTL: durationOr("PREFLIGHT_CACHE_TTL", 1*time.Minute),
 		PreflightLockTTL:  durationOr("PREFLIGHT_LOCK_TTL", 30*time.Second),
 		PreflightWait:     durationOr("PREFLIGHT_WAIT_TIMEOUT", 10*time.Second),
 		Constants:         DefaultConstants(),

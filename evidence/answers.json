@@ -1,0 +1,86 @@
+[
+  {
+    "case": {
+      "name": "unfiltered_minute",
+      "grain": "minute",
+      "metric": "summary"
+    },
+    "query_id": "pulse-bench-0",
+    "peak": 2915,
+    "avg": 8.151682424100064,
+    "row_count": 1,
+    "latency_ms": 165.194
+  },
+  {
+    "case": {
+      "name": "unfiltered_hour",
+      "grain": "hour",
+      "metric": "summary"
+    },
+    "query_id": "pulse-bench-1",
+    "peak": 2915,
+    "avg": 8.151682424100064,
+    "row_count": 1,
+    "latency_ms": 95.66
+  },
+  {
+    "case": {
+      "name": "unfiltered_day",
+      "grain": "day",
+      "metric": "summary"
+    },
+    "query_id": "pulse-bench-2",
+    "peak": 2915,
+    "avg": 8.151682424100064,
+    "row_count": 1,
+    "latency_ms": 147.525
+  },
+  {
+    "case": {
+      "name": "android_phone_minute",
+      "grain": "minute",
+      "metric": "summary",
+      "filters": [
+        {
+          "dimension": "platform",
+          "op": "eq",
+          "value": "ANDROID_PHONE"
+        }
+      ]
+    },
+    "query_id": "pulse-bench-3",
+    "peak": 1862,
+    "avg": 5.419226026190616,
+    "row_count": 1,
+    "latency_ms": 121.059
+  },
+  {
+    "case": {
+      "name": "live_hour",
+      "grain": "hour",
+      "metric": "summary",
+      "filters": [
+        {
+          "dimension": "video_type",
+          "op": "eq",
+          "value": "live"
+        }
+      ]
+    },
+    "query_id": "pulse-bench-4",
+    "peak": 451,
+    "avg": 1.0735216395560514,
+    "row_count": 1,
+    "latency_ms": 161.095
+  },
+  {
+    "case": {
+      "name": "timeseries_minute",
+      "grain": "minute",
+      "metric": "timeseries"
+    },
+    "query_id": "pulse-bench-5",
+    "row_count": 17029,
+    "latency_ms": 185.527
+  }
+]

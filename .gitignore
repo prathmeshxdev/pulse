@@ -16,3 +16,6 @@ backend/bin/
 
 # Local code-graph MCP artifact
 .code-review-graph/
+
+# Local secrets
+.env

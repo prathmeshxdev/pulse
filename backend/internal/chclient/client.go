@@ -23,7 +23,9 @@ func Connect(ctx context.Context, dsn string) (driver.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	// Cloud services sleep when idle; the first connect wakes them and can take
+	// 10-30s, so allow a generous ping window.
+	pingCtx, cancel := context.WithTimeout(ctx, 40*time.Second)
 	defer cancel()
 	if err := conn.Ping(pingCtx); err != nil {
 		_ = conn.Close()
@@ -50,8 +52,22 @@ func parseDSN(dsn string) (*clickhouse.Options, error) {
 	if addr == "" {
 		addr = "localhost:9000"
 	}
+	q := u.Query()
+	// Protocol: native by default; HTTP when asked, or when the port is the
+	// ClickHouse HTTP(S) port. ClickHouse Cloud often exposes only 8443 (HTTPS)
+	// and firewalls the native 9440, so HTTP is the reliable Cloud transport.
+	proto := clickhouse.Native
+	port := ""
+	if i := strings.LastIndex(addr, ":"); i >= 0 {
+		port = addr[i+1:]
+	}
+	switch {
+	case q.Get("protocol") == "http", u.Scheme == "http", u.Scheme == "https", port == "8443", port == "8123":
+		proto = clickhouse.HTTP
+	}
 	opts := &clickhouse.Options{
-		Addr: []string{addr},
+		Addr:     []string{addr},
+		Protocol: proto,
 		Auth: clickhouse.Auth{
 			Database: db,
 			Username: u.User.Username(),
@@ -60,10 +76,11 @@ func parseDSN(dsn string) (*clickhouse.Options, error) {
 		Settings: clickhouse.Settings{
 			"max_execution_time": 60,
 		},
-		DialTimeout: 5 * time.Second,
+		DialTimeout: 30 * time.Second,
 	}
-	if u.Query().Get("secure") == "true" {
-		opts.TLS = &tls.Config{InsecureSkipVerify: u.Query().Get("skip_verify") == "true"}
+	// TLS on for secure=true, an https scheme, or the HTTPS/native-secure ports.
+	if q.Get("secure") == "true" || u.Scheme == "https" || port == "8443" || port == "9440" {
+		opts.TLS = &tls.Config{InsecureSkipVerify: q.Get("skip_verify") == "true"}
 	}
 	if opts.Auth.Username == "" {
 		opts.Auth.Username = "default"
@@ -108,6 +125,8 @@ func scanTarget(dbType string) any {
 		return new(time.Time)
 	case strings.Contains(dt, "float"):
 		return new(float64)
+	case strings.Contains(dt, "uint"): // must precede "int" — "uint64" contains "int"
+		return new(uint64)
 	case strings.Contains(dt, "int"):
 		return new(int64)
 	default:
@@ -128,6 +147,11 @@ func deref(v any) any {
 		}
 		return *t
 	case *int64:
+		if t == nil {
+			return nil
+		}
+		return *t
+	case *uint64:
 		if t == nil {
 			return nil
 		}

@@ -69,18 +69,21 @@ func BuildChartQuery(req Request, database string, maxSegmentSpanHours int) (Que
 	endLit := formatDT(req.End)
 	lookback := fmt.Sprintf("INTERVAL %d HOUR", maxSegmentSpanHours)
 
+	// Inline the range as non-null DateTime literals. A `params` CTE referenced
+	// via scalar subqueries makes range_start/range_end Nullable(DateTime), and
+	// numbers(dateDiff(Nullable,...)) is rejected ("Illegal type Nullable(Int64),
+	// must be numeric type"). Inlining keeps every use non-nullable.
+	rangeStart := fmt.Sprintf("toDateTime(%s, 'UTC')", startLit)
+	rangeEnd := fmt.Sprintf("toDateTime(%s, 'UTC')", endLit)
+
 	b := querybuilder.New("")
-	b.WithRaw("params", fmt.Sprintf(
-		"SELECT toDateTime(%s, 'UTC') AS range_start, toDateTime(%s, 'UTC') AS range_end",
-		startLit, endLit,
-	))
 
 	var segIN string
 	if hasFilters {
 		selWhere := []string{
-			"segment_start < (SELECT range_end FROM params)",
-			"segment_end > (SELECT range_start FROM params)",
-			fmt.Sprintf("segment_start >= (SELECT range_start FROM params) - %s", lookback),
+			fmt.Sprintf("segment_start < %s", rangeEnd),
+			fmt.Sprintf("segment_end > %s", rangeStart),
+			fmt.Sprintf("segment_start >= %s - %s", rangeStart, lookback),
 		}
 		selWhere = append(selWhere, preds...)
 		selSQL := fmt.Sprintf(
@@ -93,21 +96,21 @@ func BuildChartQuery(req Request, database string, maxSegmentSpanHours int) (Que
 
 	openingSQL := fmt.Sprintf(`SELECT sum(delta) AS c0
 FROM %s.minute_deltas
-WHERE minute >= (SELECT range_start FROM params) - %s
-  AND minute < (SELECT range_start FROM params)
-  %s`, database, lookback, segIN)
+WHERE minute >= %s - %s
+  AND minute < %s
+  %s`, database, rangeStart, lookback, rangeStart, segIN)
 	b.WithRaw("opening", openingSQL)
 
 	netSQL := fmt.Sprintf(`SELECT minute, sum(delta) AS net
 FROM %s.minute_deltas
-WHERE minute >= (SELECT range_start FROM params)
-  AND minute < (SELECT range_end FROM params)
+WHERE minute >= %s
+  AND minute < %s
   %s
-GROUP BY minute`, database, segIN)
+GROUP BY minute`, database, rangeStart, rangeEnd, segIN)
 	b.WithRaw("net", netSQL)
 
-	b.WithRaw("grid", `SELECT (SELECT range_start FROM params) + toIntervalMinute(number) AS minute
-FROM numbers(dateDiff('minute', (SELECT range_start FROM params), (SELECT range_end FROM params)))`)
+	b.WithRaw("grid", fmt.Sprintf(`SELECT %s + toIntervalMinute(number) AS minute
+FROM numbers(dateDiff('minute', %s, %s))`, rangeStart, rangeStart, rangeEnd))
 
 	b.WithRaw("curve", `SELECT
     g.minute AS minute,

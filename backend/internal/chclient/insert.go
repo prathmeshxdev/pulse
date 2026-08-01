@@ -37,6 +37,23 @@ func InsertRawEvents(ctx context.Context, conn driver.Conn, table string, events
 	return batch.Send()
 }
 
+// InsertContent batch-inserts into content_metadata (FQN).
+func InsertContent(ctx context.Context, conn driver.Conn, table string, rows []models.Content) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	batch, err := conn.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %s (content_id, title, video_type, category)", table))
+	if err != nil {
+		return err
+	}
+	for _, c := range rows {
+		if err := batch.Append(c.ContentID, c.Title, c.VideoType, c.Category); err != nil {
+			return err
+		}
+	}
+	return batch.Send()
+}
+
 // InsertSegments batch-inserts into the given session_active_segments table
 // (FQN). Columns match migration 005 (computed_at defaults).
 func InsertSegments(ctx context.Context, conn driver.Conn, table string, segs []models.Segment) error {
