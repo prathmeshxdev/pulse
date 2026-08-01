@@ -38,7 +38,9 @@ func (b *Builder) BuildAll(events []models.RawEvent, watermark time.Time) []mode
 	return out
 }
 
-// BuildSession implements FINAL_PLAN §1.4–§1.5 state machine for one session.
+// BuildSession implements the FINAL_PLAN §1.4–§1.5 state machine for one session
+// by driving the shared Accumulator — the exact same code path the streaming/Redis
+// path uses, so batch and streaming produce identical segments by construction.
 func (b *Builder) BuildSession(sessionID string, events []models.RawEvent, watermark time.Time) []models.Segment {
 	if len(events) == 0 {
 		return nil
@@ -46,144 +48,172 @@ func (b *Builder) BuildSession(sessionID string, events []models.RawEvent, water
 	sort.SliceStable(events, func(i, j int) bool {
 		return eventLess(events[i], events[j])
 	})
-
-	st := sessionState{
-		// R5 / §1.4: session_open defaults true from first event; open sets it explicitly.
-		sessionOpen:  true,
-		foreground:   true,  // default true
-		playing:      false, // default false
-		grace:        b.cfg.HeartbeatGrace(),
-		pauseActive:  !b.cfg.PauseCountsAsActive, // when false, pause closes segment
-		bufferActive: b.cfg.BufferingCountsActive,
-	}
-
+	acc := NewAccumulator(b.cfg, b.version)
 	var segs []models.Segment
 	for _, e := range events {
-		signal := Classify(e.EventType, e.Event)
-		if st.closed {
-			// R5: close is terminal — ignore later events.
-			continue
+		segs = append(segs, acc.Apply(e)...)
+	}
+	segs = append(segs, acc.Finalize(watermark)...)
+	for i := range segs {
+		segs[i].VideoSessionID = sessionID
+	}
+	return segs
+}
+
+// Accumulator is the per-session incremental state machine. Batch feeds it a
+// session's events in order then Finalize()s; the streaming path loads it from
+// Redis, Apply()s one event, and persists it — same logic, same output.
+type Accumulator struct {
+	st      sessionState
+	version uint64
+}
+
+// NewAccumulator creates a fresh per-session state (session_open + foreground
+// default true, playing false; §1.4).
+func NewAccumulator(cfg config.Constants, version uint64) *Accumulator {
+	return &Accumulator{
+		st: sessionState{
+			sessionOpen:  true,
+			foreground:   true,
+			playing:      false,
+			grace:        cfg.HeartbeatGrace(),
+			pauseActive:  !cfg.PauseCountsAsActive,
+			bufferActive: cfg.BufferingCountsActive,
+		},
+		version: version,
+	}
+}
+
+// Apply processes one event and returns any segment(s) that closed as a result
+// (zero-length segments are dropped, R7). Events after close are ignored (R5).
+func (a *Accumulator) Apply(e models.RawEvent) []models.Segment {
+	st := &a.st
+	if st.closed {
+		return nil
+	}
+	var out []models.Segment
+
+	// Heartbeat gap before applying this event (R4).
+	if st.inActive && !st.lastKeepalive.IsZero() {
+		gapEnd := st.lastKeepalive.Add(st.grace)
+		if e.EventTimestamp.After(gapEnd) {
+			out = appendSeg(out, st.closeSegment(gapEnd, models.CloseReasonHeartbeat, false, a.version))
+		}
+	}
+
+	switch Classify(e.EventType, e.Event) {
+	case models.SignalOpen:
+		st.sessionOpen = true
+		st.foreground = true
+		if !st.inActive {
+			st.playing = false
 		}
 
-		// Heartbeat gap before applying this event (R4).
-		if st.inActive && !st.lastKeepalive.IsZero() {
-			gapEnd := st.lastKeepalive.Add(st.grace)
-			if e.EventTimestamp.After(gapEnd) {
-				segs = append(segs, st.closeSegment(gapEnd, models.CloseReasonHeartbeat, false, b.version))
+	case models.SignalPlay:
+		st.playing = true
+		st.lastKeepalive = e.EventTimestamp
+		st.maybeOpen(e)
+
+	case models.SignalKeepalive:
+		st.keepalive(e)
+
+	case models.SignalBufferStart:
+		if st.bufferActive {
+			st.keepalive(e)
+		} else {
+			if st.inActive {
+				out = appendSeg(out, st.closeSegment(e.EventTimestamp, models.CloseReasonBuffer, false, a.version))
 			}
+			st.buffering = true
 		}
 
-		switch signal {
-		case models.SignalOpen:
-			st.sessionOpen = true
-			st.foreground = true
-			// Only reset playing when not already in an active segment. Same-ms
-			// VideoPlay can sort before VideoSessionStart by (event_type, event);
-			// clearing playing mid-segment would stall keepalive refresh.
-			if !st.inActive {
-				st.playing = false
-			}
-			// Wait for play/keepalive evidence before opening a segment.
+	case models.SignalBufferEnd:
+		if st.bufferActive {
+			st.keepalive(e)
+		} else {
+			st.buffering = false
+			st.maybeOpen(e)
+		}
 
-		case models.SignalPlay:
+	case models.SignalPause:
+		if st.pauseActive {
+			if st.inActive {
+				out = appendSeg(out, st.closeSegment(e.EventTimestamp, models.CloseReasonPause, false, a.version))
+			}
+			st.playing = false
+		} else {
 			st.playing = true
 			st.lastKeepalive = e.EventTimestamp
 			st.maybeOpen(e)
-
-		case models.SignalKeepalive:
-			st.keepalive(e)
-
-		case models.SignalBufferStart:
-			if st.bufferActive {
-				// D3 locked default: buffering is active → keepalive.
-				st.keepalive(e)
-			} else {
-				// Flip: a stall is inactive. Close the segment and latch buffering
-				// so intervening keepalives can't reopen it until BufferEnd.
-				if st.inActive {
-					segs = append(segs, st.closeSegment(e.EventTimestamp, models.CloseReasonBuffer, false, b.version))
-				}
-				st.buffering = true
-			}
-
-		case models.SignalBufferEnd:
-			if st.bufferActive {
-				st.keepalive(e)
-			} else {
-				st.buffering = false
-				st.maybeOpen(e)
-			}
-
-		case models.SignalPause:
-			if st.pauseActive {
-				// Locked D2/R1: pause ends the active segment.
-				if st.inActive {
-					segs = append(segs, st.closeSegment(e.EventTimestamp, models.CloseReasonPause, false, b.version))
-				}
-				st.playing = false
-			} else {
-				// Sensitivity flip: pause counts as active → treat as keepalive.
-				st.playing = true
-				st.lastKeepalive = e.EventTimestamp
-				st.maybeOpen(e)
-			}
-
-		case models.SignalResume:
-			// No-op if already playing (31,780 resume vs 27,340 pause asymmetry).
-			if !st.playing {
-				st.playing = true
-				st.lastKeepalive = e.EventTimestamp
-				st.maybeOpen(e)
-			}
-
-		case models.SignalBackground:
-			if st.inActive {
-				segs = append(segs, st.closeSegment(e.EventTimestamp, models.CloseReasonBackground, false, b.version))
-			}
-			st.foreground = false
-
-		case models.SignalForeground:
-			st.foreground = true
-			// R3: foreground alone does not restart; wait for play/resume/keepalive.
-
-		case models.SignalError:
-			// R5: error closes the segment only, not the session.
-			if st.inActive {
-				segs = append(segs, st.closeSegment(e.EventTimestamp, models.CloseReasonError, false, b.version))
-			}
-			st.playing = false
-
-		case models.SignalClose:
-			if st.inActive {
-				segs = append(segs, st.closeSegment(e.EventTimestamp, models.CloseReasonSessionEnd, true, b.version))
-			}
-			st.sessionOpen = false
-			st.closed = true
-			st.playing = false
-
-		case models.SignalIgnore:
-			// no-op
 		}
-	}
 
-	// Still active at end of known data → clamp to watermark (R8).
+	case models.SignalResume:
+		if !st.playing {
+			st.playing = true
+			st.lastKeepalive = e.EventTimestamp
+			st.maybeOpen(e)
+		}
+
+	case models.SignalBackground:
+		if st.inActive {
+			out = appendSeg(out, st.closeSegment(e.EventTimestamp, models.CloseReasonBackground, false, a.version))
+		}
+		st.foreground = false
+
+	case models.SignalForeground:
+		st.foreground = true
+
+	case models.SignalError:
+		if st.inActive {
+			out = appendSeg(out, st.closeSegment(e.EventTimestamp, models.CloseReasonError, false, a.version))
+		}
+		st.playing = false
+
+	case models.SignalClose:
+		if st.inActive {
+			out = appendSeg(out, st.closeSegment(e.EventTimestamp, models.CloseReasonSessionEnd, true, a.version))
+		}
+		st.sessionOpen = false
+		st.closed = true
+		st.playing = false
+
+	case models.SignalIgnore:
+	}
+	return out
+}
+
+// Finalize emits the trailing open segment clamped to the watermark (R8).
+func (a *Accumulator) Finalize(watermark time.Time) []models.Segment {
+	st := &a.st
 	if st.inActive && !st.closed {
 		end := st.lastKeepalive.Add(st.grace)
 		if !watermark.IsZero() && end.After(watermark) {
 			end = watermark
 		}
-		segs = append(segs, st.closeSegment(end, models.CloseReasonWatermark, false, b.version))
+		return appendSeg(nil, st.closeSegment(end, models.CloseReasonWatermark, false, a.version))
 	}
+	return nil
+}
 
-	// R7: drop zero-length segments.
-	filtered := segs[:0]
-	for _, s := range segs {
-		if s.SegmentEnd.After(s.SegmentStart) {
-			s.VideoSessionID = sessionID
-			filtered = append(filtered, s)
-		}
+// Active reports whether the session is active at instant `at` — the live-count
+// predicate: in an open segment, not ended, and heartbeat-fresh within grace.
+func (a *Accumulator) Active(at time.Time) bool {
+	st := a.st
+	if !st.inActive || st.closed || at.Before(st.segmentStart) {
+		return false
 	}
-	return filtered
+	return st.lastKeepalive.IsZero() || !at.After(st.lastKeepalive.Add(st.grace))
+}
+
+// Closed reports whether the session has terminated (VideoSessionEnd).
+func (a *Accumulator) Closed() bool { return a.st.closed }
+
+// appendSeg appends s only if it is non-empty (R7: drop zero-length segments).
+func appendSeg(out []models.Segment, s models.Segment) []models.Segment {
+	if s.SegmentEnd.After(s.SegmentStart) {
+		return append(out, s)
+	}
+	return out
 }
 
 type sessionState struct {
