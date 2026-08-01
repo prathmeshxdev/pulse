@@ -91,6 +91,7 @@ func (a *Accumulator) Apply(e models.RawEvent) []models.Segment {
 	if st.closed {
 		return nil
 	}
+	st.lastEventTime = e.EventTimestamp
 	var out []models.Segment
 
 	// Heartbeat gap before applying this event (R4).
@@ -208,6 +209,71 @@ func (a *Accumulator) Active(at time.Time) bool {
 // Closed reports whether the session has terminated (VideoSessionEnd).
 func (a *Accumulator) Closed() bool { return a.st.closed }
 
+// LastEventTime returns the timestamp of the most recent event applied to this
+// session (regardless of signal type) — used by the streaming store to drive
+// Redis's sliding TTL and to detect the >TTL "too late, fall back" case.
+func (a *Accumulator) LastEventTime() time.Time { return a.st.lastEventTime }
+
+// State is the exported, JSON-serializable snapshot of an Accumulator's
+// internal state — what the Redis streaming store persists per session
+// between events. Restore(cfg, version, state) reconstructs an equivalent
+// Accumulator; Snapshot() extracts it. Round-tripping through State must not
+// change subsequent behavior (verified by TestSnapshotRoundTrip).
+type State struct {
+	SessionOpen   bool            `json:"session_open"`
+	Closed        bool            `json:"closed"`
+	Foreground    bool            `json:"foreground"`
+	Playing       bool            `json:"playing"`
+	Buffering     bool            `json:"buffering"`
+	InActive      bool            `json:"in_active"`
+	SegmentStart  time.Time       `json:"segment_start"`
+	LastKeepalive time.Time       `json:"last_keepalive"`
+	LastEventTime time.Time       `json:"last_event_time"`
+	Dims          models.RawEvent `json:"dims"`
+	Version       uint64          `json:"version"`
+}
+
+// Snapshot extracts the current state for persistence (e.g. to Redis).
+func (a *Accumulator) Snapshot() State {
+	return State{
+		SessionOpen:   a.st.sessionOpen,
+		Closed:        a.st.closed,
+		Foreground:    a.st.foreground,
+		Playing:       a.st.playing,
+		Buffering:     a.st.buffering,
+		InActive:      a.st.inActive,
+		SegmentStart:  a.st.segmentStart,
+		LastKeepalive: a.st.lastKeepalive,
+		LastEventTime: a.st.lastEventTime,
+		Dims:          a.st.dims,
+		Version:       a.version,
+	}
+}
+
+// Restore rebuilds an Accumulator from a previously-persisted State plus the
+// config knobs (grace/pauseActive/bufferActive are config-derived, not
+// serialized, so a config change takes effect on the next Restore).
+func Restore(cfg config.Constants, s State) *Accumulator {
+	return &Accumulator{
+		version: s.Version,
+		st: sessionState{
+			sessionOpen:   s.SessionOpen,
+			closed:        s.Closed,
+			foreground:    s.Foreground,
+			playing:       s.Playing,
+			buffering:     s.Buffering,
+			inActive:      s.InActive,
+			segmentStart:  s.SegmentStart,
+			lastKeepalive: s.LastKeepalive,
+			lastEventTime: s.LastEventTime,
+			dims:          s.Dims,
+			grace:         cfg.HeartbeatGrace(),
+			pauseActive:   !cfg.PauseCountsAsActive,
+			bufferActive:  cfg.BufferingCountsActive,
+		},
+	}
+}
+
 // appendSeg appends s only if it is non-empty (R7: drop zero-length segments).
 func appendSeg(out []models.Segment, s models.Segment) []models.Segment {
 	if s.SegmentEnd.After(s.SegmentStart) {
@@ -217,18 +283,19 @@ func appendSeg(out []models.Segment, s models.Segment) []models.Segment {
 }
 
 type sessionState struct {
-	sessionOpen  bool
-	closed       bool
-	foreground   bool
-	playing      bool
-	buffering    bool // only set when BUFFERING_COUNTS_AS_ACTIVE is false (D3 flip)
-	inActive     bool
-	segmentStart time.Time
+	sessionOpen   bool
+	closed        bool
+	foreground    bool
+	playing       bool
+	buffering     bool // only set when BUFFERING_COUNTS_AS_ACTIVE is false (D3 flip)
+	inActive      bool
+	segmentStart  time.Time
 	lastKeepalive time.Time
-	dims         models.RawEvent
-	grace        time.Duration
-	pauseActive  bool // true means pause closes (normal locked semantics)
-	bufferActive bool
+	lastEventTime time.Time // most recent event applied, any signal — TTL/staleness driver
+	dims          models.RawEvent
+	grace         time.Duration
+	pauseActive   bool // true means pause closes (normal locked semantics)
+	bufferActive  bool
 }
 
 func (st *sessionState) maybeOpen(e models.RawEvent) {

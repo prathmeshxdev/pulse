@@ -109,3 +109,59 @@ func TestActivePredicate(t *testing.T) {
 	a.Apply(models.RawEvent{VideoSessionID: "X", EventType: "VideoHeartbeat", Event: "pause", EventTimestamp: at(30)})
 	assert.False(t, a.Active(at(31)), "inactive after pause")
 }
+
+// TestSnapshotRoundTrip proves that persisting an Accumulator's state (Snapshot)
+// and restoring it (Restore) — the Redis store's serialize/deserialize cycle —
+// produces identical subsequent behavior to never having snapshotted at all.
+// This is the correctness proof for the Redis persistence layer: state can be
+// evicted from memory and reloaded from Redis on the next event with zero drift.
+func TestSnapshotRoundTrip(t *testing.T) {
+	base := time.Date(2026, 7, 26, 10, 0, 0, 0, time.UTC)
+	at := func(sec int) time.Time { return base.Add(time.Duration(sec) * time.Second) }
+	ev := func(sid string, sec int, et, e string) models.RawEvent {
+		return models.RawEvent{VideoSessionID: sid, EventType: et, Event: e, EventTimestamp: at(sec), Platform: "IPHONE", Country: "india"}
+	}
+	events := []models.RawEvent{
+		ev("R1", 0, "VideoSessionStart", "VideoSessionStart"),
+		ev("R1", 0, "VideoPlay", "VideoPlay"),
+		ev("R1", 30, "VideoHeartbeat", "buffer-health"),
+		ev("R1", 60, "VideoHeartbeat", "pause"),
+		ev("R1", 90, "VideoHeartbeat", "resume"),
+		ev("R1", 150, "VideoSessionEnd", "VideoSessionEnd"),
+	}
+	cfg := config.DefaultConstants()
+	wm := at(200)
+
+	// Baseline: no snapshotting, straight through one Accumulator.
+	baseline := NewAccumulator(cfg, 7)
+	var baseSegs []models.Segment
+	for _, e := range events {
+		baseSegs = append(baseSegs, baseline.Apply(e)...)
+	}
+	baseSegs = append(baseSegs, baseline.Finalize(wm)...)
+
+	// Round-tripped: snapshot + restore between every single event.
+	rt := NewAccumulator(cfg, 7)
+	var rtSegs []models.Segment
+	for _, e := range events {
+		snap := rt.Snapshot()
+		rt = Restore(cfg, snap)
+		rtSegs = append(rtSegs, rt.Apply(e)...)
+	}
+	snap := rt.Snapshot()
+	rt = Restore(cfg, snap)
+	rtSegs = append(rtSegs, rt.Finalize(wm)...)
+
+	key := func(segs []models.Segment) []string {
+		out := make([]string, len(segs))
+		for i, s := range segs {
+			out[i] = fmt.Sprintf("%d|%s|%s|%s", s.SegmentID,
+				s.SegmentStart.UTC().Format(time.RFC3339), s.SegmentEnd.UTC().Format(time.RFC3339), s.CloseReason)
+		}
+		sort.Strings(out)
+		return out
+	}
+	assert.NotEmpty(t, baseSegs)
+	assert.Equal(t, key(baseSegs), key(rtSegs), "snapshot/restore round-trip must not change output")
+	assert.Equal(t, baseline.Active(at(45)), rt.Active(at(45)))
+}

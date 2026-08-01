@@ -20,17 +20,19 @@ import (
 	"github.com/prathmeshxdev/pulse/internal/concurrency"
 	"github.com/prathmeshxdev/pulse/internal/config"
 	"github.com/prathmeshxdev/pulse/internal/filters"
+	"github.com/prathmeshxdev/pulse/internal/livestate"
 	"github.com/prathmeshxdev/pulse/internal/otelx"
 	"github.com/prathmeshxdev/pulse/internal/preflight"
 )
 
 type Server struct {
-	cfg           config.ServerConfig
-	ch            driver.Conn
-	preflight     *preflight.Executor
-	tracer        trace.Tracer
-	otelShutdown  func(context.Context) error
-	mux           *http.ServeMux
+	cfg          config.ServerConfig
+	ch           driver.Conn
+	preflight    *preflight.Executor
+	live         *livestate.Store // nil if LiveEnabled=false or redis unavailable
+	tracer       trace.Tracer
+	otelShutdown func(context.Context) error
+	mux          *http.ServeMux
 }
 
 func New(cfg config.ServerConfig, ch driver.Conn, rdb *redis.Client) *Server {
@@ -40,8 +42,12 @@ func New(cfg config.ServerConfig, ch driver.Conn, rdb *redis.Client) *Server {
 		LockTTL:     cfg.PreflightLockTTL,
 		WaitTimeout: cfg.PreflightWait,
 	})
+	var live *livestate.Store
+	if cfg.LiveEnabled && rdb != nil {
+		live = livestate.New(rdb, cfg.Constants, cfg.LiveTTL)
+	}
 	tracer, shutdown, _ := otelx.Setup(context.Background())
-	s := &Server{cfg: cfg, ch: ch, preflight: pf, tracer: tracer, otelShutdown: shutdown, mux: http.NewServeMux()}
+	s := &Server{cfg: cfg, ch: ch, preflight: pf, live: live, tracer: tracer, otelShutdown: shutdown, mux: http.NewServeMux()}
 	s.routes()
 	return s
 }
@@ -114,11 +120,56 @@ func (s *Server) handleValues(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"dimension": dim, "values": vals})
 }
 
-// handleLive returns real-time "active viewers now" from the MV-maintained
-// session_live_state (updates on every insert; idempotent + late-tolerant).
-// "now" defaults to the data watermark (max event ts); a true stream would use now().
-// ?by=platform|country returns the live count per dimension value.
+// handleLive returns real-time "active viewers now". Two sources are available:
+//
+//   - Redis (internal/livestate), when streamd is running: EXACT — the same
+//     state machine as batch (TestStreamingMatchesBatch), maintained
+//     incrementally per event with a sliding 48h TTL for late corrections.
+//     O(1) count via an active-session set. This is now the primary source.
+//   - ClickHouse session_live_state MV: an approximation via argMax/max
+//     reconstruction (measured ~0.5% off exact — 637 vs 640 at a validated
+//     instant). Kept as a fallback for when streamd/Redis isn't running, since
+//     it requires no separate process.
+//
+// ?source=redis|mv forces one explicitly (mainly for side-by-side validation);
+// default is redis when available, else mv.
 func (s *Server) handleLive(w http.ResponseWriter, r *http.Request) {
+	source := r.URL.Query().Get("source")
+	if source == "" {
+		source = "mv"
+		if s.live != nil {
+			source = "redis"
+		}
+	}
+	if source == "redis" {
+		if s.live == nil {
+			writeErr(w, http.StatusServiceUnavailable, "redis live source not configured (LIVE_ENABLED/redis)")
+			return
+		}
+		s.handleLiveRedis(w, r)
+		return
+	}
+	s.handleLiveMV(w, r)
+}
+
+// handleLiveRedis serves the exact live count from the Redis active-session set.
+func (s *Server) handleLiveRedis(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	n, err := s.live.ActiveCount(ctx)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"source":     "redis",
+		"active_now": n,
+		"exact":      true,
+	})
+}
+
+// handleLiveMV serves the approximate live count from the ClickHouse
+// session_live_state materialized view (argMax/max reconstruction).
+func (s *Server) handleLiveMV(w http.ResponseWriter, r *http.Request) {
 	db := s.cfg.Constants.Database
 	grace := s.cfg.Constants.HeartbeatGraceSec
 	by := r.URL.Query().Get("by")
@@ -145,10 +196,10 @@ func (s *Server) handleLive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if by != "" {
-		writeJSON(w, http.StatusOK, map[string]any{"by": by, "rows": rows})
+		writeJSON(w, http.StatusOK, map[string]any{"source": "mv", "by": by, "rows": rows})
 		return
 	}
-	out := map[string]any{"active_now": 0, "open_sessions": 0}
+	out := map[string]any{"source": "mv", "active_now": 0, "open_sessions": 0, "exact": false}
 	if len(rows) == 1 {
 		out["active_now"] = rows[0]["active_now"]
 		out["open_sessions"] = rows[0]["open_sessions"]

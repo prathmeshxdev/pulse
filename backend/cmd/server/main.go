@@ -27,10 +27,10 @@ func main() {
 	defer conn.Close()
 
 	var rdb *redis.Client
-	if cfg.PreflightEnabled && cfg.RedisAddr != "" {
-		rdb = redis.NewClient(&redis.Options{Addr: cfg.RedisAddr})
+	if (cfg.PreflightEnabled || cfg.LiveEnabled) && cfg.RedisAddr != "" {
+		rdb = redis.NewClient(&redis.Options{Addr: cfg.RedisAddr, Password: cfg.RedisPassword})
 		if err := rdb.Ping(ctx).Err(); err != nil {
-			log.Printf("redis unavailable (%v); preflight disabled", err)
+			log.Printf("redis unavailable (%v); preflight cache and live-concurrency disabled", err)
 			rdb = nil
 		}
 	}

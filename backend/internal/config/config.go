@@ -100,22 +100,35 @@ type ServerConfig struct {
 	Addr              string
 	ClickHouseDSN     string
 	RedisAddr         string
+	RedisPassword     string
 	PreflightEnabled  bool
 	PreflightCacheTTL time.Duration
 	PreflightLockTTL  time.Duration
 	PreflightWait     time.Duration
-	Constants         Constants
+	// LiveEnabled turns on the Redis-backed exact live-concurrency path
+	// (internal/livestate). Independent of PreflightEnabled — Redis is used
+	// for two different things (query cache vs. live session state).
+	LiveEnabled bool
+	// LiveTTL bounds how late an event may arrive and still be folded into its
+	// session via the fast Redis path (sliding TTL). Default 48h — comfortably
+	// above the measured 43.64h max session span in the training data.
+	// Sessions silent longer than this are reconcile-or-drop (cmd/reconcile).
+	LiveTTL   time.Duration
+	Constants Constants
 }
 
 func LoadServerConfig() ServerConfig {
 	c := ServerConfig{
 		Addr:              envOr("ADDR", ":8080"),
 		ClickHouseDSN:     envOr("CLICKHOUSE_DSN", "clickhouse://default:@localhost:9000/sony_liv"),
-		RedisAddr:         envOr("REDIS_ADDR", "localhost:6379"),
+		RedisAddr:         resolveRedisAddr(),
+		RedisPassword:     os.Getenv("REDIS_PASSWORD"),
 		PreflightEnabled:  envOr("PREFLIGHT_ENABLED", "true") == "true",
 		PreflightCacheTTL: durationOr("PREFLIGHT_CACHE_TTL", 1*time.Minute),
 		PreflightLockTTL:  durationOr("PREFLIGHT_LOCK_TTL", 30*time.Second),
 		PreflightWait:     durationOr("PREFLIGHT_WAIT_TIMEOUT", 10*time.Second),
+		LiveEnabled:       envOr("LIVE_ENABLED", "true") == "true",
+		LiveTTL:           durationOr("LIVE_TTL", 48*time.Hour),
 		Constants:         DefaultConstants(),
 	}
 	if path := os.Getenv("CONFIG_ENV"); path != "" {
@@ -131,6 +144,20 @@ func envOr(k, def string) string {
 		return v
 	}
 	return def
+}
+
+// resolveRedisAddr accepts either REDIS_ADDR ("host:port") or the separate
+// REDIS_HOST/REDIS_PORT pair (the shape managed Redis providers, e.g. Redis
+// Cloud, typically hand out alongside REDIS_PASSWORD).
+func resolveRedisAddr() string {
+	if addr := os.Getenv("REDIS_ADDR"); addr != "" {
+		return addr
+	}
+	if host := os.Getenv("REDIS_HOST"); host != "" {
+		port := envOr("REDIS_PORT", "6379")
+		return host + ":" + port
+	}
+	return "localhost:6379"
 }
 
 func durationOr(k string, def time.Duration) time.Duration {
