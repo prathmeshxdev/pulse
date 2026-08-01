@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ChartResult, Filter, Grain } from "../types";
 import { getChart } from "../api";
 import { Chart } from "./Chart";
+import { Breakdown } from "./Breakdown";
 import { downsample, fmtTime, peakPoint } from "../util";
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
   end: string;
   grain: Grain;
   filters: Filter[];
+  breakdownDim: string;
 }
 
 const MAX_POINTS = 2000;
@@ -16,7 +18,7 @@ const MAX_POINTS = 2000;
 const fmt = (n: number | null) =>
   n === null ? "—" : n >= 1000 ? Math.round(n).toLocaleString() : n.toFixed(n < 10 ? 2 : 1);
 
-export function Dashboard({ start, end, grain, filters }: Props) {
+export function Dashboard({ start, end, grain, filters, breakdownDim }: Props) {
   const [res, setRes] = useState<ChartResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -84,6 +86,10 @@ export function Dashboard({ start, end, grain, filters }: Props) {
           </p>
         )}
       </div>
+
+      {breakdownDim && (
+        <Breakdown start={start} end={end} grain={grain} dimension={breakdownDim} filters={filters} />
+      )}
     </div>
   );
 }

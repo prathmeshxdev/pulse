@@ -1,4 +1,4 @@
-import type { ChartResult, CurvePoint, Dimension, Filter, Grain, Window } from "./types";
+import type { BreakdownRow, ChartResult, CurvePoint, Dimension, Filter, Grain, Window } from "./types";
 
 const num = (v: unknown): number | null =>
   v === null || v === undefined ? null : typeof v === "number" ? v : Number(v);
@@ -76,4 +76,22 @@ export async function getChart(
     peak: num(summary.peak) ?? (summary.rows[0] ? num(summary.rows[0].peak_concurrency) : null),
     avg: num(summary.avg) ?? (summary.rows[0] ? num(summary.rows[0].avg_concurrency) : null),
   };
+}
+
+// getBreakdown returns peak+avg concurrency per value of a dimension (top-N).
+export async function getBreakdown(
+  start: string,
+  end: string,
+  grain: Grain,
+  dimension: string,
+  filters: Filter[]
+): Promise<BreakdownRow[]> {
+  const r = await fetch("/api/v1/concurrency/breakdown", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ start: normalizeDT(start), end: normalizeDT(end), grain, dimension, filters }),
+  });
+  if (!r.ok) throw new Error(`breakdown: ${r.status} ${await r.text()}`);
+  const d = (await r.json()) as { rows: BreakdownRow[] };
+  return d.rows ?? [];
 }

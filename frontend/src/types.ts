@@ -29,3 +29,9 @@ export interface Window {
   start: string | null;
   end: string | null;
 }
+
+export interface BreakdownRow {
+  value: string;
+  peak: number | null;
+  avg: number | null;
+}

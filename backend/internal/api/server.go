@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
@@ -55,6 +59,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /health", s.handleHealth)
 	s.mux.HandleFunc("GET /ping", s.handleHealth)
 	s.mux.HandleFunc("POST /api/v1/concurrency/chart", s.handleChart)
+	s.mux.HandleFunc("POST /api/v1/concurrency/breakdown", s.handleBreakdown)
 	s.mux.HandleFunc("GET /api/v1/schema/dimensions", s.handleDimensions)
 	s.mux.HandleFunc("GET /api/v1/schema/values", s.handleValues)
 	s.mux.HandleFunc("GET /api/v1/schema/window", s.handleWindow)
@@ -201,6 +206,139 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 		out.SQL = q.SQL
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+type breakdownBody struct {
+	Start     string           `json:"start"`
+	End       string           `json:"end"`
+	Grain     string           `json:"grain"`
+	Dimension string           `json:"dimension"`
+	Filters   []filters.Filter `json:"filters"`
+	Limit     int              `json:"limit"`
+}
+
+// handleBreakdown computes peak+avg concurrency per value of a dimension (top-N
+// by segment count). Each value reuses the exact normative summary template, so
+// a breakdown row equals what you'd get by filtering to that value — and it
+// surfaces the problem's point that different dimension values peak at different
+// times/heights.
+func (s *Server) handleBreakdown(w http.ResponseWriter, r *http.Request) {
+	ctx, span := s.tracer.Start(r.Context(), "concurrency.breakdown")
+	defer span.End()
+
+	var body breakdownBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeErr(w, http.StatusBadRequest, "invalid json: "+err.Error())
+		return
+	}
+	start, err := parseTime(body.Start)
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, "invalid start: "+err.Error())
+		return
+	}
+	end, err := parseTime(body.End)
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, "invalid end: "+err.Error())
+		return
+	}
+	kind, ref, ok := filters.Lookup(body.Dimension)
+	if !ok {
+		writeErr(w, http.StatusBadRequest, "unknown dimension: "+body.Dimension)
+		return
+	}
+	limit := body.Limit
+	if limit <= 0 || limit > 20 {
+		limit = 10
+	}
+	db := s.cfg.Constants.Database
+	span.SetAttributes(otelx.StringAttr("dimension", body.Dimension), otelx.IntAttr("filters", len(body.Filters)))
+
+	// Value expression: typed column, or dictGet for content attributes.
+	valueExpr := ref
+	if kind == "dict" {
+		valueExpr = "dictGet('" + db + ".content_dict', '" + ref + "', content_id)"
+	}
+	// Respect any existing filters when picking the top-N values.
+	preds, hasFilters, err := filters.BuildSegmentPredicates(body.Filters, db)
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	where := "WHERE " + valueExpr + " != ''"
+	if hasFilters {
+		where += " AND " + strings.Join(preds, " AND ")
+	}
+	valSQL := "SELECT " + valueExpr + " AS v FROM " + db + ".session_active_segments FINAL " + where +
+		" GROUP BY v ORDER BY count() DESC LIMIT " + strconv.Itoa(limit)
+	valRows, err := chclient.QueryMaps(ctx, s.ch, valSQL)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	type brow struct {
+		Value string   `json:"value"`
+		Peak  *float64 `json:"peak"`
+		Avg   *float64 `json:"avg"`
+	}
+	out := make([]brow, len(valRows))
+	sem := make(chan struct{}, 6) // bounded fan-out
+	var wg sync.WaitGroup
+	for i, vr := range valRows {
+		v, _ := vr["v"].(string)
+		out[i] = brow{Value: v}
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(i int, v string) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			req := concurrency.Request{
+				Start: start, End: end,
+				Grain:  concurrency.Grain(body.Grain),
+				Metric: concurrency.MetricSummary,
+				Filters: append(append([]filters.Filter{}, body.Filters...),
+					filters.Filter{Dimension: body.Dimension, Op: "eq", Value: v}),
+			}
+			q, err := concurrency.BuildChartQuery(req, db, s.cfg.Constants.MaxSegmentSpanHours)
+			if err != nil {
+				return
+			}
+			rows, err := chclient.QueryMaps(ctx, s.ch, q.SQL)
+			if err != nil || len(rows) != 1 {
+				return
+			}
+			out[i].Peak = numToPtr(rows[0]["peak_concurrency"])
+			out[i].Avg = numToPtr(rows[0]["avg_concurrency"])
+		}(i, v)
+	}
+	wg.Wait()
+	// Select top-N by count, present sorted by peak (nils last).
+	sort.SliceStable(out, func(i, j int) bool {
+		pi, pj := -1.0, -1.0
+		if out[i].Peak != nil {
+			pi = *out[i].Peak
+		}
+		if out[j].Peak != nil {
+			pj = *out[j].Peak
+		}
+		return pi > pj
+	})
+	writeJSON(w, http.StatusOK, map[string]any{"dimension": body.Dimension, "rows": out})
+}
+
+func numToPtr(v any) *float64 {
+	switch t := v.(type) {
+	case float64:
+		return &t
+	case int64:
+		f := float64(t)
+		return &f
+	case uint64:
+		f := float64(t)
+		return &f
+	}
+	return nil
 }
 
 func parseTime(s string) (time.Time, error) {

@@ -14,6 +14,7 @@ export default function App() {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [grain, setGrain] = useState<Grain>("minute");
+  const [breakdownDim, setBreakdownDim] = useState("");
   const [bootError, setBootError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,6 +58,19 @@ export default function App() {
 
         <hr />
         <FilterSidebar dimensions={dimensions} filters={filters} onChange={setFilters} />
+
+        <hr />
+        <div className="field">
+          <label>Break down by</label>
+          <select value={breakdownDim} onChange={(e) => setBreakdownDim(e.target.value)}>
+            <option value="">none</option>
+            {dimensions.map((d) => (
+              <option key={d.name} value={d.name}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </aside>
 
       <main className="main">
@@ -72,7 +86,7 @@ export default function App() {
         {bootError && <div className="error">Backend not reachable: {bootError}</div>}
 
         {tab === "dashboard" ? (
-          <Dashboard start={start} end={end} grain={grain} filters={filters} />
+          <Dashboard start={start} end={end} grain={grain} filters={filters} breakdownDim={breakdownDim} />
         ) : (
           <ReplayView start={start} end={end} grain={grain} filters={filters} />
         )}
