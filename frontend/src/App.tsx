@@ -74,7 +74,7 @@ export default function App() {
         {tab === "dashboard" ? (
           <Dashboard start={start} end={end} grain={grain} filters={filters} />
         ) : (
-          <ReplayView start={start} end={end} filters={filters} />
+          <ReplayView start={start} end={end} grain={grain} filters={filters} />
         )}
       </main>
     </div>

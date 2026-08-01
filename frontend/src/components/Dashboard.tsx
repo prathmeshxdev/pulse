@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChartResult, Filter, Grain } from "../types";
 import { getChart } from "../api";
 import { Chart } from "./Chart";
+import { downsample, fmtTime, peakPoint } from "../util";
 
 interface Props {
   start: string;
@@ -10,25 +11,37 @@ interface Props {
   filters: Filter[];
 }
 
+const MAX_POINTS = 2000;
+
 const fmt = (n: number | null) =>
-  n === null ? "—" : n >= 1000 ? n.toLocaleString(undefined, { maximumFractionDigits: 0 }) : n.toFixed(n < 10 ? 2 : 1);
+  n === null ? "—" : n >= 1000 ? Math.round(n).toLocaleString() : n.toFixed(n < 10 ? 2 : 1);
 
 export function Dashboard({ start, end, grain, filters }: Props) {
   const [res, setRes] = useState<ChartResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Debounced fetch: typing a date / toggling filters shouldn't fire a query
+  // per keystroke. Keep the previous chart visible while the new one loads.
   useEffect(() => {
     if (!start || !end) return;
+    let cancelled = false;
     setLoading(true);
-    setErr(null);
-    getChart(start, end, grain, filters)
-      .then(setRes)
-      .catch((e) => setErr(String(e)))
-      .finally(() => setLoading(false));
+    const h = setTimeout(() => {
+      getChart(start, end, grain, filters)
+        .then((r) => !cancelled && (setRes(r), setErr(null)))
+        .catch((e) => !cancelled && setErr(String(e)))
+        .finally(() => !cancelled && setLoading(false));
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(h);
+    };
   }, [start, end, grain, JSON.stringify(filters)]);
 
   const label = grain === "minute" ? "concurrency" : "peak in bucket";
+  const shown = useMemo(() => (res ? downsample(res.points, MAX_POINTS) : []), [res]);
+  const peakAt = useMemo(() => (res ? peakPoint(res.points) : null), [res]);
 
   return (
     <div>
@@ -36,6 +49,7 @@ export function Dashboard({ start, end, grain, filters }: Props) {
         <div className="kpi">
           <div className="label">Peak concurrency</div>
           <div className="value accent">{res ? fmt(res.peak) : "—"}</div>
+          {peakAt && <div className="muted" style={{ marginTop: 4 }}>at {fmtTime(peakAt.t, grain)} UTC</div>}
         </div>
         <div className="kpi">
           <div className="label">Avg concurrency</div>
@@ -54,11 +68,20 @@ export function Dashboard({ start, end, grain, filters }: Props) {
       {err && <div className="error">{err}</div>}
 
       <div className="card">
-        <h3>{loading ? "Loading…" : `Concurrency curve — ${label}`}</h3>
-        {res && res.points.length > 0 ? (
-          <Chart points={res.points} label={label} />
+        <h3>
+          Concurrency curve — {label}
+          {loading && <span className="muted" style={{ fontWeight: 400 }}> · updating…</span>}
+        </h3>
+        {shown.length > 0 ? (
+          <Chart points={shown} label={label} grain={grain} />
         ) : (
-          <p className="muted">{loading ? "" : "No data for this range/filter. Set a range that overlaps the loaded data."}</p>
+          <p className="muted">{loading ? "" : "No data for this range/filter."}</p>
+        )}
+        {res && res.points.length > MAX_POINTS && (
+          <p className="muted" style={{ marginTop: 8 }}>
+            Showing {MAX_POINTS.toLocaleString()} of {res.points.length.toLocaleString()} points (peak-preserving
+            downsample); peak/avg KPIs are exact from the serving query.
+          </p>
         )}
       </div>
     </div>

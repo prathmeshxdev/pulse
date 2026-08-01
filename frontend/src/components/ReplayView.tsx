@@ -1,56 +1,63 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ChartResult, Filter } from "../types";
+import type { ChartResult, Filter, Grain } from "../types";
 import { getChart } from "../api";
 import { Chart } from "./Chart";
+import { downsample, fmtTime } from "../util";
 
-// ReplayView fetches the full minute curve once, then reveals it minute-by-minute
-// to recreate the "concurrency builds in near real time" demo. Pure client-side
-// animation over the served curve — no extra backend path.
-export function ReplayView({ start, end, filters }: { start: string; end: string; filters: Filter[] }) {
+const MAX_POINTS = 3000;
+
+// ReplayView fetches the curve once at the SELECTED grain, then reveals it
+// point-by-point to recreate the "concurrency builds in near real time" demo.
+export function ReplayView({ start, end, grain, filters }: { start: string; end: string; grain: Grain; filters: Filter[] }) {
   const [full, setFull] = useState<ChartResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState(20); // minutes revealed per second
+  const [speed, setSpeed] = useState(20); // points revealed per second
   const timer = useRef<number | null>(null);
+
+  // Downsampled once; replay animates over these points (respects grain).
+  const points = useMemo(() => (full ? downsample(full.points, MAX_POINTS) : []), [full]);
 
   useEffect(() => {
     if (!start || !end) return;
     setErr(null);
     setPlaying(false);
     setI(0);
-    getChart(start, end, "minute", filters)
-      .then((r) => {
-        setFull(r);
-        setI(0);
-      })
+    getChart(start, end, grain, filters)
+      .then((r) => (setFull(r), setI(0)))
       .catch((e) => setErr(String(e)));
-  }, [start, end, JSON.stringify(filters)]);
+  }, [start, end, grain, JSON.stringify(filters)]);
 
   useEffect(() => {
-    if (!playing || !full) return;
+    if (!playing || points.length === 0) return;
+    // Step in chunks so long series still finish quickly and render smoothly.
+    const step = Math.max(1, Math.round(speed / 20));
+    const tickMs = 1000 / Math.min(speed, 20);
     timer.current = window.setInterval(() => {
       setI((prev) => {
-        if (prev >= full.points.length) {
+        if (prev >= points.length) {
           setPlaying(false);
           return prev;
         }
-        return prev + 1;
+        return prev + step;
       });
-    }, 1000 / speed);
+    }, tickMs);
     return () => {
       if (timer.current) window.clearInterval(timer.current);
     };
-  }, [playing, speed, full]);
+  }, [playing, speed, points]);
 
-  const shown = useMemo(() => (full ? full.points.slice(0, Math.max(1, i)) : []), [full, i]);
+  const shown = useMemo(() => points.slice(0, Math.max(1, Math.min(i, points.length))), [points, i]);
   const curVal = shown.length ? shown[shown.length - 1].value : 0;
+  const curT = shown.length ? shown[shown.length - 1].t : "";
   const runningPeak = useMemo(() => shown.reduce((m, p) => Math.max(m, p.value), 0), [shown]);
 
   if (err) return <div className="error">{err}</div>;
   if (!full) return <p className="muted">Loading curve…</p>;
 
-  const atEnd = i >= full.points.length;
+  const label = grain === "minute" ? "concurrency" : "peak in bucket";
+  const atEnd = i >= points.length;
 
   return (
     <div>
@@ -58,15 +65,16 @@ export function ReplayView({ start, end, filters }: { start: string; end: string
         <div className="kpi">
           <div className="label">Now watching</div>
           <div className="value accent">{Math.round(curVal).toLocaleString()}</div>
+          {curT && <div className="muted" style={{ marginTop: 4 }}>{fmtTime(curT, grain)} UTC</div>}
         </div>
         <div className="kpi">
           <div className="label">Running peak</div>
           <div className="value">{Math.round(runningPeak).toLocaleString()}</div>
         </div>
         <div className="kpi">
-          <div className="label">Minute</div>
+          <div className="label">{grain} buckets</div>
           <div className="value">
-            {Math.min(i, full.points.length)}/{full.points.length}
+            {Math.min(i, points.length).toLocaleString()}/{points.length.toLocaleString()}
           </div>
         </div>
       </div>
@@ -79,8 +87,8 @@ export function ReplayView({ start, end, filters }: { start: string; end: string
           <input
             type="range"
             min={0}
-            max={full.points.length}
-            value={i}
+            max={points.length}
+            value={Math.min(i, points.length)}
             onChange={(e) => {
               setPlaying(false);
               setI(Number(e.target.value));
@@ -89,14 +97,14 @@ export function ReplayView({ start, end, filters }: { start: string; end: string
           <label className="muted">
             speed&nbsp;
             <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))}>
-              <option value={5}>5×</option>
+              <option value={10}>10×</option>
               <option value={20}>20×</option>
               <option value={60}>60×</option>
               <option value={200}>200×</option>
             </select>
           </label>
         </div>
-        <Chart points={shown} label="concurrency" />
+        <Chart points={shown} label={label} grain={grain} />
       </div>
     </div>
   );
