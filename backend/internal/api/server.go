@@ -8,19 +8,24 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/prathmeshxdev/pulse/internal/chclient"
 	"github.com/prathmeshxdev/pulse/internal/concurrency"
 	"github.com/prathmeshxdev/pulse/internal/config"
 	"github.com/prathmeshxdev/pulse/internal/filters"
+	"github.com/prathmeshxdev/pulse/internal/otelx"
 	"github.com/prathmeshxdev/pulse/internal/preflight"
 )
 
 type Server struct {
-	cfg       config.ServerConfig
-	ch        driver.Conn
-	preflight *preflight.Executor
-	mux       *http.ServeMux
+	cfg           config.ServerConfig
+	ch            driver.Conn
+	preflight     *preflight.Executor
+	tracer        trace.Tracer
+	otelShutdown  func(context.Context) error
+	mux           *http.ServeMux
 }
 
 func New(cfg config.ServerConfig, ch driver.Conn, rdb *redis.Client) *Server {
@@ -30,12 +35,21 @@ func New(cfg config.ServerConfig, ch driver.Conn, rdb *redis.Client) *Server {
 		LockTTL:     cfg.PreflightLockTTL,
 		WaitTimeout: cfg.PreflightWait,
 	})
-	s := &Server{cfg: cfg, ch: ch, preflight: pf, mux: http.NewServeMux()}
+	tracer, shutdown, _ := otelx.Setup(context.Background())
+	s := &Server{cfg: cfg, ch: ch, preflight: pf, tracer: tracer, otelShutdown: shutdown, mux: http.NewServeMux()}
 	s.routes()
 	return s
 }
 
 func (s *Server) Handler() http.Handler { return s.mux }
+
+// Shutdown flushes the OTel exporter (no-op when disabled).
+func (s *Server) Shutdown(ctx context.Context) error {
+	if s.otelShutdown != nil {
+		return s.otelShutdown(ctx)
+	}
+	return nil
+}
 
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /health", s.handleHealth)
@@ -113,11 +127,20 @@ type chartRequestBody struct {
 }
 
 func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
+	ctx, span := s.tracer.Start(r.Context(), "concurrency.chart")
+	defer span.End()
+
 	var body chartRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		span.SetStatus(codes.Error, "bad json")
 		writeErr(w, http.StatusBadRequest, "invalid json: "+err.Error())
 		return
 	}
+	span.SetAttributes(
+		otelx.StringAttr("grain", body.Grain),
+		otelx.StringAttr("metric", body.Metric),
+		otelx.IntAttr("filters", len(body.Filters)),
+	)
 	start, err := parseTime(body.Start)
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, "invalid start: "+err.Error())
@@ -151,7 +174,7 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 		CacheKey string          `json:"cache_key"`
 	}
 
-	out, err := preflight.Do(r.Context(), s.preflight, key, func(ctx context.Context) (result, error) {
+	out, err := preflight.Do(ctx, s.preflight, key, func(ctx context.Context) (result, error) {
 		rows, err := chclient.QueryMaps(ctx, s.ch, q.SQL)
 		if err != nil {
 			return result{}, err
@@ -168,9 +191,11 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 		return res, nil
 	})
 	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	span.SetAttributes(otelx.IntAttr("result_rows", len(out.Rows)))
 	// Expose SQL only when explicitly requested (debug).
 	if r.URL.Query().Get("debug") == "1" {
 		out.SQL = q.SQL

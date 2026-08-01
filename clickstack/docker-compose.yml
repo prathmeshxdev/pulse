@@ -1,0 +1,22 @@
+# ClickStack (HyperDX all-in-one) — observability for the Pulse pipeline.
+# Bundles ClickHouse + OTel collector + HyperDX UI. The Go API exports OTLP
+# traces here (one span per concurrency query: grain, filters, latency, errors),
+# so query performance and error rate are observable on the real serving path.
+#
+#   docker compose up -d
+#   # then run the API with:  OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 ./bin/server
+#   # UI at http://localhost:8080
+services:
+  clickstack:
+    image: docker.hyperdx.io/hyperdx/hyperdx-all-in-one:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # HyperDX UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP  ← OTEL_EXPORTER_OTLP_ENDPOINT target
+      - "8123:8123"   # ClickStack's own ClickHouse (observability store)
+    volumes:
+      - clickstack-data:/data
+
+volumes:
+  clickstack-data:
