@@ -1,0 +1,32 @@
+slug: pulse-by-layers
+title: Pulse
+subtitle: Foreground-only concurrency on ClickHouse — by layers
+
+description: >
+  Click-a-thon 2026 solution for Sony LIV: defensible semantics, serving-layer
+  design, Redis caching, LibreChat + observability. Four-layer architecture walkthrough.
+
+speaker:
+  name: Prathmesh Sidana
+  role: Pulse · Click-a-thon 2026
+  initials: PS
+
+team: pulse
+teamLabel: Pulse
+
+vertical: clickhouse
+verticalLabel: ClickHouse
+
+date: 2026-08-02
+duration: 30 min
+
+tags:
+  - clickhouse
+  - concurrency
+  - redis
+  - librechat
+  - observability
+  - click-a-thon
+
+glyph: P01
+accent: "linear-gradient(90deg, #FFD166, #06D6A0)"

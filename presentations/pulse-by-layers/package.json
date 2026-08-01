@@ -1,0 +1,14 @@
+{
+  "name": "pulse-by-layers",
+  "private": true,
+  "scripts": {
+    "dev": "slidev --open --port 3032 slides.md",
+    "build": "slidev build slides.md --out dist",
+    "export": "slidev export slides.md"
+  },
+  "devDependencies": {
+    "@slidev/cli": "^52.16.0",
+    "@slidev/theme-default": "^0.25.0",
+    "@vueuse/motion": "^3.0.3"
+  }
+}

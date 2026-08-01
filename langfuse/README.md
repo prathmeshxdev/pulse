@@ -3,6 +3,17 @@
 Traces **LibreChat → LiteLLM → model** (prompts, tokens, MCP tool calls).
 Complements **ClickStack** (Pulse API / pipeline → ClickHouse Cloud `otel_*`).
 
+## System context
+
+Langfuse sits in the **observability layer** (top) of the four-layer Pulse HLD.
+ClickStack covers API/pipeline spans; Langfuse covers conversational LLM traces.
+
+![Pulse system HLD — Langfuse is in the observability layer alongside ClickStack](../presentations/pulse-by-layers/public/hld.png)
+
+Solid lines: implemented paths. Dotted lines: direct MCP-to-ClickHouse reads or
+future components (metadata registry, Kafka ingestion). See
+`presentations/pulse-by-layers/` for the full deck and HLD review notes.
+
 ## Cloud vs self-host
 
 | | Langfuse Cloud | Self-host |
