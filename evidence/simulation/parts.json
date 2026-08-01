@@ -1,0 +1,27 @@
+[
+  {
+    "parts": 7,
+    "rows": 35947,
+    "table": "concurrency_minute_serving"
+  },
+  {
+    "parts": 1,
+    "rows": 33464,
+    "table": "content_metadata"
+  },
+  {
+    "parts": 7,
+    "rows": 64582,
+    "table": "minute_deltas"
+  },
+  {
+    "parts": 7,
+    "rows": 905558,
+    "table": "raw_events"
+  },
+  {
+    "parts": 7,
+    "rows": 32291,
+    "table": "session_active_segments"
+  }
+]

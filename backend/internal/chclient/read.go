@@ -7,6 +7,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 
+	"github.com/prathmeshxdev/pulse/internal/filters"
 	"github.com/prathmeshxdev/pulse/internal/models"
 )
 
@@ -22,7 +23,7 @@ func FetchSessionEvents(ctx context.Context, conn driver.Conn, db string, sessio
 	}
 	sql := fmt.Sprintf(`SELECT video_session_id, user_id, content_id, event_type, event,
 		event_timestamp, platform, app_version, country, audio_language,
-		subtitle_language, player_version, session_start_epoch
+		subtitle_language, player_version, session_start_epoch, properties
 		FROM %s.raw_events WHERE video_session_id IN (%s)
 		ORDER BY video_session_id, event_timestamp, event_type, event`,
 		db, strings.Join(quoted, ", "))
@@ -34,11 +35,13 @@ func FetchSessionEvents(ctx context.Context, conn driver.Conn, db string, sessio
 	var out []models.RawEvent
 	for rows.Next() {
 		var e models.RawEvent
+		var propsRaw any
 		if err := rows.Scan(&e.VideoSessionID, &e.UserID, &e.ContentID, &e.EventType, &e.Event,
 			&e.EventTimestamp, &e.Platform, &e.AppVersion, &e.Country, &e.AudioLanguage,
-			&e.SubtitleLanguage, &e.PlayerVersion, &e.SessionStartEpoch); err != nil {
+			&e.SubtitleLanguage, &e.PlayerVersion, &e.SessionStartEpoch, &propsRaw); err != nil {
 			return nil, err
 		}
+		e.Properties = PropertiesFromJSON(propsRaw)
 		out = append(out, e)
 	}
 	return out, rows.Err()
@@ -116,6 +119,46 @@ func PublishedEdges(ctx context.Context, conn driver.Conn, db string, segmentIDs
 			return nil, err
 		}
 		out = append(out, d)
+	}
+	return out, rows.Err()
+}
+
+// FetchPropertyKeyTypes reads the daily append catalog (path → types map).
+// Merges all appended snapshots; returns nil when not migrated yet.
+func FetchPropertyKeyTypes(ctx context.Context, conn driver.Conn, db string) (filters.PropertyTypes, error) {
+	if TableExists(ctx, conn, db, "properties_key_mappings") {
+		sql := fmt.Sprintf(`SELECT
+			k AS key,
+			any(arrayElement(v, 1)) AS ch_type
+		FROM %s.properties_key_mappings
+		ARRAY JOIN mapKeys(paths) AS k, paths[k] AS v
+		GROUP BY k`, db)
+		return scanPropertyTypes(ctx, conn, sql)
+	}
+	// Legacy flat table (pre-daily-append migration).
+	if TableExists(ctx, conn, db, "properties_key_types") {
+		sql := fmt.Sprintf(`SELECT key, any(ch_type) AS ch_type
+			FROM %s.properties_key_types FINAL
+			WHERE source IN ('session_active_segments', 'raw_events')
+			GROUP BY key`, db)
+		return scanPropertyTypes(ctx, conn, sql)
+	}
+	return nil, nil
+}
+
+func scanPropertyTypes(ctx context.Context, conn driver.Conn, sql string) (filters.PropertyTypes, error) {
+	rows, err := conn.Query(ctx, sql)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make(filters.PropertyTypes)
+	for rows.Next() {
+		var key, chType string
+		if err := rows.Scan(&key, &chType); err != nil {
+			return nil, err
+		}
+		out[key] = chType
 	}
 	return out, rows.Err()
 }

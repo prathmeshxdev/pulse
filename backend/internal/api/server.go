@@ -33,6 +33,11 @@ type Server struct {
 	tracer       trace.Tracer
 	otelShutdown func(context.Context) error
 	mux          *http.ServeMux
+
+	propTypesMu  sync.RWMutex
+	propTypes    filters.PropertyTypes
+	propTypesAt  time.Time
+	propTypesTTL time.Duration
 }
 
 func New(cfg config.ServerConfig, ch driver.Conn, rdb *redis.Client) *Server {
@@ -47,7 +52,10 @@ func New(cfg config.ServerConfig, ch driver.Conn, rdb *redis.Client) *Server {
 		live = livestate.New(rdb, cfg.Constants, cfg.LiveTTL)
 	}
 	tracer, shutdown, _ := otelx.Setup(context.Background())
-	s := &Server{cfg: cfg, ch: ch, preflight: pf, live: live, tracer: tracer, otelShutdown: shutdown, mux: http.NewServeMux()}
+	s := &Server{
+		cfg: cfg, ch: ch, preflight: pf, live: live, tracer: tracer, otelShutdown: shutdown, mux: http.NewServeMux(),
+		propTypesTTL: 5 * time.Minute,
+	}
 	s.routes()
 	return s
 }
@@ -90,23 +98,46 @@ func (s *Server) handleWindow(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+func (s *Server) propertyTypesResolver(ctx context.Context) filters.PropertyTypeResolver {
+	s.propTypesMu.RLock()
+	if s.propTypes != nil && time.Since(s.propTypesAt) < s.propTypesTTL {
+		pt := s.propTypes
+		s.propTypesMu.RUnlock()
+		return filters.StringFallbackTypes{PropertyTypes: pt}
+	}
+	s.propTypesMu.RUnlock()
+
+	types, err := chclient.FetchPropertyKeyTypes(ctx, s.ch, s.cfg.Constants.Database)
+	if err != nil || types == nil {
+		return filters.StringFallbackTypes{}
+	}
+	s.propTypesMu.Lock()
+	s.propTypes = types
+	s.propTypesAt = time.Now()
+	s.propTypesMu.Unlock()
+	return filters.StringFallbackTypes{PropertyTypes: types}
+}
+
 // handleValues returns distinct values for a filterable dimension (for the UI
-// filter dropdowns). Capped; segment dims read from session_active_segments,
-// content dims from content_metadata.
+// filter dropdowns). Works for typed segment columns, content_dict attributes,
+// and dynamic properties keys (via typed toString expressions).
 func (s *Server) handleValues(w http.ResponseWriter, r *http.Request) {
 	dim := r.URL.Query().Get("dimension")
-	kind, ref, ok := filters.Lookup(dim)
+	propTypes := s.propertyTypesResolver(r.Context())
+	resolved, ok := filters.ResolveDimension(dim, s.cfg.Constants.Database, propTypes)
 	if !ok {
 		writeErr(w, http.StatusBadRequest, "unknown dimension: "+dim)
 		return
 	}
 	db := s.cfg.Constants.Database
+	expr := filters.ValueSuggestionExpr(resolved, db, propTypes)
+	nonEmpty := filters.NonEmptyPredicate(resolved, expr)
 	var sql string
-	switch kind {
-	case "segment":
-		sql = "SELECT DISTINCT " + ref + " AS v FROM " + db + ".session_active_segments WHERE v != '' ORDER BY v LIMIT 500"
-	default: // dict → content_metadata column
-		sql = "SELECT DISTINCT " + ref + " AS v FROM " + db + ".content_metadata WHERE v != '' ORDER BY v LIMIT 500"
+	switch resolved.Kind {
+	case "dict":
+		sql = fmt.Sprintf("SELECT DISTINCT %s AS v FROM %s.content_metadata WHERE %s ORDER BY v LIMIT 500", expr, db, nonEmpty)
+	default:
+		sql = fmt.Sprintf("SELECT DISTINCT %s AS v FROM %s.session_active_segments FINAL WHERE %s ORDER BY v LIMIT 500", expr, db, nonEmpty)
 	}
 	rows, err := chclient.QueryMaps(r.Context(), s.ch, sql)
 	if err != nil {
@@ -220,11 +251,27 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
-func (s *Server) handleDimensions(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) handleDimensions(w http.ResponseWriter, r *http.Request) {
+	propTypes := s.propertyTypesResolver(r.Context())
+	dims := filters.StaticDimensions()
+	if dynamic := filters.PropertyDimensions(asPropertyTypes(propTypes)); len(dynamic) > 0 {
+		dims = append(dims, dynamic...)
+		sort.Slice(dims, func(i, j int) bool { return dims[i].Name < dims[j].Name })
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"dimensions": filters.Dimensions(),
+		"dimensions": dims,
 		"database":   s.cfg.Constants.Database,
 	})
+}
+
+func asPropertyTypes(r filters.PropertyTypeResolver) filters.PropertyTypes {
+	if pt, ok := r.(filters.StringFallbackTypes); ok {
+		return pt.PropertyTypes
+	}
+	if pt, ok := r.(filters.PropertyTypes); ok {
+		return pt
+	}
+	return nil
 }
 
 type chartRequestBody struct {
@@ -278,7 +325,7 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 		q, err = concurrency.BuildRollupQuery(req, s.cfg.Constants.Database, s.cfg.Constants.MaxSegmentSpanHours)
 		engine = "rollup"
 	} else {
-		q, err = concurrency.BuildChartQuery(req, s.cfg.Constants.Database, s.cfg.Constants.MaxSegmentSpanHours)
+		q, err = concurrency.BuildChartQuery(req, s.cfg.Constants.Database, s.cfg.Constants.MaxSegmentSpanHours, s.propertyTypesResolver(ctx))
 	}
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, err.Error())
@@ -359,7 +406,9 @@ func (s *Server) handleBreakdown(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "invalid end: "+err.Error())
 		return
 	}
-	kind, ref, ok := filters.Lookup(body.Dimension)
+	db := s.cfg.Constants.Database
+	propTypes := s.propertyTypesResolver(ctx)
+	resolved, ok := filters.ResolveDimension(body.Dimension, db, propTypes)
 	if !ok {
 		writeErr(w, http.StatusBadRequest, "unknown dimension: "+body.Dimension)
 		return
@@ -368,21 +417,16 @@ func (s *Server) handleBreakdown(w http.ResponseWriter, r *http.Request) {
 	if limit <= 0 || limit > 20 {
 		limit = 10
 	}
-	db := s.cfg.Constants.Database
 	span.SetAttributes(otelx.StringAttr("dimension", body.Dimension), otelx.IntAttr("filters", len(body.Filters)))
 
-	// Value expression: typed column, or dictGet for content attributes.
-	valueExpr := ref
-	if kind == "dict" {
-		valueExpr = "dictGet('" + db + ".content_dict', '" + ref + "', content_id)"
-	}
-	// Respect any existing filters when picking the top-N values.
-	preds, hasFilters, err := filters.BuildSegmentPredicates(body.Filters, db)
+	valueExpr := filters.BreakdownValueExpr(resolved, db, propTypes)
+	preds, hasFilters, err := filters.BuildSegmentPredicates(body.Filters, db, propTypes)
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	where := "WHERE " + valueExpr + " != ''"
+	nonEmpty := filters.NonEmptyPredicate(resolved, valueExpr)
+	where := "WHERE " + nonEmpty
 	if hasFilters {
 		where += " AND " + strings.Join(preds, " AND ")
 	}
@@ -418,7 +462,7 @@ func (s *Server) handleBreakdown(w http.ResponseWriter, r *http.Request) {
 				Filters: append(append([]filters.Filter{}, body.Filters...),
 					filters.Filter{Dimension: body.Dimension, Op: "eq", Value: v}),
 			}
-			q, err := concurrency.BuildChartQuery(req, db, s.cfg.Constants.MaxSegmentSpanHours)
+			q, err := concurrency.BuildChartQuery(req, db, s.cfg.Constants.MaxSegmentSpanHours, propTypes)
 			if err != nil {
 				return
 			}

@@ -51,7 +51,7 @@ type Query struct {
 // have to wait for a segment to close and flush to minute_deltas — see the
 // open_edges doc comment below for the mechanism and why is_final=0 is the
 // wrong filter for it.
-func BuildChartQuery(req Request, database string, maxSegmentSpanHours int) (Query, error) {
+func BuildChartQuery(req Request, database string, maxSegmentSpanHours int, propTypes filters.PropertyTypeResolver) (Query, error) {
 	if req.End.Before(req.Start) || req.End.Equal(req.Start) {
 		return Query{}, fmt.Errorf("end must be after start")
 	}
@@ -65,7 +65,7 @@ func BuildChartQuery(req Request, database string, maxSegmentSpanHours int) (Que
 		maxSegmentSpanHours = 72
 	}
 
-	preds, hasFilters, err := filters.BuildSegmentPredicates(req.Filters, database)
+	preds, hasFilters, err := filters.BuildSegmentPredicates(req.Filters, database, propTypes)
 	if err != nil {
 		return Query{}, err
 	}

@@ -366,7 +366,19 @@ func (st *sessionState) buildSegment(end time.Time, reason string, isFinal bool,
 		IsFinal:          final,
 		CloseReason:      reason,
 		Version:          version,
+		Properties:       cloneProperties(st.dims.Properties),
 	}
+}
+
+func cloneProperties(in map[string]interface{}) map[string]interface{} {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]interface{}, len(in))
+	for k, v := range in {
+		out[k] = v
+	}
+	return out
 }
 
 func (st *sessionState) closeSegment(end time.Time, reason string, isFinal bool, version uint64) models.Segment {

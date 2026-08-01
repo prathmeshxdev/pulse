@@ -17,6 +17,8 @@ type RawEvent struct {
 	SubtitleLanguage  string
 	PlayerVersion     string
 	SessionStartEpoch time.Time
+	// Properties holds any CSV/Kafka columns not in the typed schema (dynamic extensibility).
+	Properties map[string]interface{} `json:"properties,omitempty"`
 }
 
 // Content is one row from the content metadata CSV → content_metadata.
@@ -64,6 +66,8 @@ type Segment struct {
 	IsFinal          uint8
 	CloseReason      string
 	Version          uint64
+	// Properties snapshots dynamic dimensions from the opening event (R10).
+	Properties map[string]interface{} `json:"properties,omitempty"`
 }
 
 // MinuteDelta is one narrow sweep-line edge.

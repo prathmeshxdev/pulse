@@ -96,7 +96,7 @@ func main() {
 			Start: start.UTC(), End: end.UTC(),
 			Grain: grainOr(c.Grain), Metric: metricOr(c.Metric), Filters: c.Filters,
 		}
-		q, err := concurrency.BuildChartQuery(req, cfg.Database, cfg.MaxSegmentSpanHours)
+		q, err := concurrency.BuildChartQuery(req, cfg.Database, cfg.MaxSegmentSpanHours, nil)
 		a := answer{Case: c}
 		if *includeSQL {
 			a.SQL = q.SQL

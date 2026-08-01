@@ -20,7 +20,7 @@ func TestBuildChartQuery_SummaryWithFilters(t *testing.T) {
 			{Dimension: "platform", Op: "eq", Value: "ANDROID"},
 			{Dimension: "country", Op: "eq", Value: "india"},
 		},
-	}, "sony_liv", 72)
+	}, "sony_liv", 72, nil)
 	require.NoError(t, err)
 	assert.Contains(t, q.SQL, "session_active_segments FINAL")
 	assert.Contains(t, q.SQL, "platform = 'ANDROID'")
@@ -39,7 +39,7 @@ func TestBuildChartQuery_OmitsSelWhenUnfiltered(t *testing.T) {
 		Start:  time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
 		End:    time.Date(2026, 1, 15, 1, 0, 0, 0, time.UTC),
 		Metric: MetricPeak,
-	}, "sony_liv", 72)
+	}, "sony_liv", 72, nil)
 	require.NoError(t, err)
 	assert.NotContains(t, q.SQL, "sel AS")
 	assert.NotContains(t, q.SQL, "segment_id IN")
@@ -50,16 +50,38 @@ func TestBuildChartQuery_RejectsBadRange(t *testing.T) {
 	_, err := BuildChartQuery(Request{
 		Start: time.Date(2026, 1, 16, 0, 0, 0, 0, time.UTC),
 		End:   time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
-	}, "sony_liv", 72)
+	}, "sony_liv", 72, nil)
 	assert.Error(t, err)
+}
+
+func TestBuildChartQuery_DynamicPropertyDimension(t *testing.T) {
+	types := filters.PropertyTypes{"network_type": "String"}
+	q, err := BuildChartQuery(Request{
+		Start:   time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
+		End:     time.Date(2026, 1, 15, 1, 0, 0, 0, time.UTC),
+		Filters: []filters.Filter{{Dimension: "network_type", Op: "eq", Value: "wifi"}},
+	}, "sony_liv", 72, filters.StringFallbackTypes{PropertyTypes: types})
+	require.NoError(t, err)
+	assert.Contains(t, q.SQL, "toString(properties.network_type) = 'wifi'")
+}
+
+func TestBuildChartQuery_DynamicPropertyNumeric(t *testing.T) {
+	types := filters.PropertyTypes{"bandwidth_mbps": "Int64"}
+	q, err := BuildChartQuery(Request{
+		Start:   time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
+		End:     time.Date(2026, 1, 15, 1, 0, 0, 0, time.UTC),
+		Filters: []filters.Filter{{Dimension: "bandwidth_mbps", Op: "eq", Value: "100"}},
+	}, "sony_liv", 72, filters.StringFallbackTypes{PropertyTypes: types})
+	require.NoError(t, err)
+	assert.Contains(t, q.SQL, "properties.bandwidth_mbps = 100")
 }
 
 func TestBuildChartQuery_UnknownDimension(t *testing.T) {
 	_, err := BuildChartQuery(Request{
 		Start:   time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
 		End:     time.Date(2026, 1, 15, 1, 0, 0, 0, time.UTC),
-		Filters: []filters.Filter{{Dimension: "not_a_dim", Value: "x"}},
-	}, "sony_liv", 72)
+		Filters: []filters.Filter{{Dimension: "not-a-dim", Value: "x"}},
+	}, "sony_liv", 72, nil)
 	assert.Error(t, err)
 }
 
@@ -78,7 +100,7 @@ func TestBuildChartQuery_OpenEdgesCorrection(t *testing.T) {
 		Filters: []filters.Filter{
 			{Dimension: "platform", Op: "eq", Value: "ANDROID"},
 		},
-	}, "sony_liv", 72)
+	}, "sony_liv", 72, nil)
 	require.NoError(t, err)
 	assert.Contains(t, q.SQL, "open_edges")
 	assert.Contains(t, q.SQL, "close_reason = ''")
@@ -98,7 +120,7 @@ func TestBuildChartQuery_TimeseriesHour(t *testing.T) {
 		End:    time.Date(2026, 1, 16, 0, 0, 0, 0, time.UTC),
 		Grain:  GrainHour,
 		Metric: MetricTimeseries,
-	}, "sony_liv", 72)
+	}, "sony_liv", 72, nil)
 	require.NoError(t, err)
 	assert.Contains(t, q.SQL, "toStartOfHour")
 	assert.Contains(t, q.SQL, "GROUP BY")

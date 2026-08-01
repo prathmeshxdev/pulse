@@ -9,9 +9,11 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prathmeshxdev/pulse/internal/models"
+	"github.com/prathmeshxdev/pulse/internal/schema"
 )
 
 // ReadCSV parses the raw-events CSV (CSVWithNames) into RawEvents.
@@ -64,6 +66,7 @@ func ReadCSV(path string) ([]models.RawEvent, error) {
 				sse = t
 			}
 		}
+		props := extraProperties(idx, rec, get)
 		out = append(out, models.RawEvent{
 			VideoSessionID:    get("video_session_id"),
 			UserID:            get("user_id"),
@@ -78,9 +81,45 @@ func ReadCSV(path string) ([]models.RawEvent, error) {
 			SubtitleLanguage:  get("subtitle_language"),
 			PlayerVersion:     get("player_version"),
 			SessionStartEpoch: sse,
+			Properties:        props,
 		})
 	}
 	return out, nil
+}
+
+// extraProperties collects CSV columns that are not part of the typed schema.
+func extraProperties(idx map[string]int, rec []string, get func(string) string) map[string]interface{} {
+	var props map[string]interface{}
+	for col := range idx {
+		if _, known := schema.RawEventKnownColumns[col]; known {
+			continue
+		}
+		v := get(col)
+		if v == "" {
+			continue
+		}
+		if props == nil {
+			props = make(map[string]interface{})
+		}
+		props[col] = parsePropertyValue(v)
+	}
+	return props
+}
+
+func parsePropertyValue(s string) interface{} {
+	if n, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return n
+	}
+	if f, err := strconv.ParseFloat(s, 64); err == nil {
+		return f
+	}
+	switch strings.ToLower(s) {
+	case "true":
+		return true
+	case "false":
+		return false
+	}
+	return s
 }
 
 // ReadContentCSV parses the content metadata CSV (content_id,title,video_type,category).

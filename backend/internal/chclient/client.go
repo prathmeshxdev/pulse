@@ -82,6 +82,8 @@ func parseDSN(dsn string) (*clickhouse.Options, error) {
 			// the cross-partition merge (verified: 0 segment_ids span >1 partition,
 			// FINAL count and peak unchanged). Harmless for the other tables.
 			"do_not_merge_across_partitions_select_final": 1,
+			// Required for native JSON column read/write on ClickHouse Cloud 25.3+.
+			"output_format_native_use_flattened_dynamic_and_json_serialization": 1,
 		},
 		DialTimeout: 30 * time.Second,
 	}

@@ -6,7 +6,7 @@
 #   Local:  docker compose --profile local up
 services:
   clickhouse:
-    image: clickhouse/clickhouse-server:24.8
+    image: clickhouse/clickhouse-server:25.3
     profiles: ["local"]
     ports:
       - "8123:8123"

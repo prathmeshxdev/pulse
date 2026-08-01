@@ -20,7 +20,7 @@ func InsertRawEvents(ctx context.Context, conn driver.Conn, table string, events
 	stmt := fmt.Sprintf(`INSERT INTO %s
 		(video_session_id, user_id, content_id, event_type, event, event_timestamp,
 		 platform, app_version, country, audio_language, subtitle_language,
-		 player_version, session_start_epoch)`, table)
+		 player_version, session_start_epoch, properties)`, table)
 	batch, err := conn.PrepareBatch(ctx, stmt)
 	if err != nil {
 		return err
@@ -29,7 +29,7 @@ func InsertRawEvents(ctx context.Context, conn driver.Conn, table string, events
 		if err := batch.Append(
 			e.VideoSessionID, e.UserID, e.ContentID, e.EventType, e.Event, e.EventTimestamp.UTC(),
 			e.Platform, e.AppVersion, e.Country, e.AudioLanguage, e.SubtitleLanguage,
-			e.PlayerVersion, e.SessionStartEpoch.UTC(),
+			e.PlayerVersion, e.SessionStartEpoch.UTC(), PropertiesColumn(e.Properties),
 		); err != nil {
 			return err
 		}
@@ -63,7 +63,7 @@ func InsertSegments(ctx context.Context, conn driver.Conn, table string, segs []
 	stmt := fmt.Sprintf(`INSERT INTO %s
 		(segment_id, video_session_id, user_id, content_id, platform, country,
 		 app_version, audio_language, subtitle_language, player_version,
-		 segment_start, segment_end, is_final, close_reason, version)`, table)
+		 segment_start, segment_end, is_final, close_reason, version, properties)`, table)
 	batch, err := conn.PrepareBatch(ctx, stmt)
 	if err != nil {
 		return err
@@ -73,6 +73,7 @@ func InsertSegments(ctx context.Context, conn driver.Conn, table string, segs []
 			s.SegmentID, s.VideoSessionID, s.UserID, s.ContentID, s.Platform, s.Country,
 			s.AppVersion, s.AudioLanguage, s.SubtitleLanguage, s.PlayerVersion,
 			s.SegmentStart.UTC(), s.SegmentEnd.UTC(), s.IsFinal, s.CloseReason, s.Version,
+			PropertiesColumn(s.Properties),
 		); err != nil {
 			return err
 		}

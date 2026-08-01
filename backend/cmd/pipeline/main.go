@@ -16,6 +16,8 @@ func main() {
 	dsn := flag.String("dsn", envOr("CLICKHOUSE_DSN", "clickhouse://default:@localhost:9000/default"), "ClickHouse DSN")
 	migrations := flag.String("migrations", "../clickhouse/migrations", "migrations directory")
 	reloadDict := flag.Bool("reload-dict", false, "reload content_dict after migrations")
+	dropDB := flag.Bool("drop", false, "drop sony_liv database before applying migrations (full recreate)")
+	execSQL := flag.String("exec", "", "run a single SQL statement and exit (no migrations)")
 	flag.Parse()
 
 	ctx := context.Background()
@@ -25,6 +27,24 @@ func main() {
 		os.Exit(1)
 	}
 	defer conn.Close()
+
+	if *execSQL != "" {
+		if err := conn.Exec(ctx, *execSQL); err != nil {
+			fmt.Fprintf(os.Stderr, "exec: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("ok")
+		return
+	}
+
+	cfg := config.DefaultConstants()
+	if *dropDB {
+		fmt.Printf("dropping database %s\n", cfg.Database)
+		if err := conn.Exec(ctx, "DROP DATABASE IF EXISTS "+cfg.Database); err != nil {
+			fmt.Fprintf(os.Stderr, "drop database: %v\n", err)
+			os.Exit(1)
+		}
+	}
 
 	entries, err := os.ReadDir(*migrations)
 	if err != nil {

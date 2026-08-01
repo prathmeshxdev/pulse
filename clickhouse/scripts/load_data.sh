@@ -26,7 +26,7 @@ client --query "
 INSERT INTO ${DATABASE}.raw_events (
   video_session_id, user_id, content_id, event_type, event, event_timestamp,
   platform, app_version, country, audio_language, subtitle_language, player_version,
-  session_start_epoch
+  session_start_epoch, properties
 )
 SELECT
   video_session_id,
@@ -42,7 +42,8 @@ SELECT
   subtitle_language,
   player_version,
   if(session_start_epoch = '', fromUnixTimestamp64Milli(toInt64(event_timestamp)),
-     fromUnixTimestamp64Milli(toInt64(session_start_epoch)))
+     fromUnixTimestamp64Milli(toInt64(session_start_epoch))),
+  CAST('{}' AS JSON)
 FROM input('
   video_session_id String,
   user_id String,

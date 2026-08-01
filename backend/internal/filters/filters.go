@@ -2,10 +2,13 @@ package filters
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/prathmeshxdev/pulse/internal/querybuilder"
 )
+
+var propertyNameRE = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 // Allowed dimension columns on session_active_segments (typed only — D1).
 var segmentDimensions = map[string]string{
@@ -81,38 +84,33 @@ type Filter struct {
 }
 
 // BuildSegmentPredicates returns SQL predicates for the sel CTE.
-// Returns (predicates, hasDimensionFilter). Unknown dimensions error.
-func BuildSegmentPredicates(filters []Filter, database string) ([]string, bool, error) {
-	if len(filters) == 0 {
+// Returns (predicates, hasDimensionFilter). propTypes supplies ClickHouse types
+// for dynamic properties keys (from properties_key_mappings MV); nil → string fallback.
+func BuildSegmentPredicates(fs []Filter, database string, propTypes PropertyTypeResolver) ([]string, bool, error) {
+	if len(fs) == 0 {
 		return nil, false, nil
 	}
-	out := make([]string, 0, len(filters))
-	for i, f := range filters {
+	if propTypes == nil {
+		propTypes = StringFallbackTypes{}
+	}
+	out := make([]string, 0, len(fs))
+	for i, f := range fs {
 		dim := strings.ToLower(strings.TrimSpace(f.Dimension))
 		op := strings.ToLower(strings.TrimSpace(f.Op))
 		if op == "" {
 			op = "eq"
 		}
 
-		if col, ok := segmentDimensions[dim]; ok {
-			pred, err := buildPred(col, op, f, dim == "content_id")
-			if err != nil {
-				return nil, false, fmt.Errorf("filter[%d]: %w", i, err)
-			}
-			out = append(out, pred)
-			continue
+		resolved, ok := ResolveDimension(dim, database, propTypes)
+		if !ok {
+			return nil, false, fmt.Errorf("unknown dimension %q", f.Dimension)
 		}
-
-		if attr, ok := dictDimensions[dim]; ok {
-			expr := fmt.Sprintf("dictGet('%s.content_dict', '%s', content_id)", database, attr)
-			pred, err := buildPred(expr, op, f, false)
-			if err != nil {
-				return nil, false, fmt.Errorf("filter[%d]: %w", i, err)
-			}
-			out = append(out, pred)
-			continue
+		expr := FilterExpr(resolved, database, propTypes)
+		pred, err := buildPred(expr, op, f, isNumericDimension(resolved))
+		if err != nil {
+			return nil, false, fmt.Errorf("filter[%d]: %w", i, err)
 		}
-		return nil, false, fmt.Errorf("unknown dimension %q", f.Dimension)
+		out = append(out, pred)
 	}
 	return out, true, nil
 }
@@ -167,14 +165,36 @@ func buildPred(left, op string, f Filter, numeric bool) (string, error) {
 	}
 }
 
-// Dimensions lists filterable dimensions for GET /schema/dimensions.
+// StaticDimensions lists the fixed typed segment + dict dimensions.
+func StaticDimensions() []DimensionMeta {
+	return dimensionsList()
+}
+
+// Dimensions lists filterable dimensions for GET /schema/dimensions (static only).
+// Callers merge PropertyDimensions for dynamic keys from properties_key_mappings.
 func Dimensions() []DimensionMeta {
+	return dimensionsList()
+}
+
+func dimensionsList() []DimensionMeta {
 	out := make([]DimensionMeta, 0, len(segmentDimensions)+len(dictDimensions))
 	for k := range segmentDimensions {
 		out = append(out, DimensionMeta{Name: k, Source: "session_active_segments", Type: "LowCardinality(String)"})
 	}
 	for k := range dictDimensions {
 		out = append(out, DimensionMeta{Name: k, Source: "content_dict", Type: "String"})
+	}
+	return out
+}
+
+// PropertyDimensions builds dimension metadata from the properties_key_mappings catalog.
+func PropertyDimensions(types PropertyTypes) []DimensionMeta {
+	if len(types) == 0 {
+		return nil
+	}
+	out := make([]DimensionMeta, 0, len(types))
+	for k, t := range types {
+		out = append(out, DimensionMeta{Name: k, Source: "properties", Type: t})
 	}
 	return out
 }
@@ -186,8 +206,9 @@ type DimensionMeta struct {
 }
 
 // Lookup resolves a dimension to its storage. kind is "segment" (typed column
-// on session_active_segments) or "dict" (content_dict attribute / content_metadata
-// column). ref is the column/attribute name. ok is false for unknown dimensions.
+// on session_active_segments), "dict" (content_dict attribute), or "property"
+// (dynamic JSON path under session_active_segments.properties).
+// ref is the column/attribute/property name. ok is false for invalid names.
 func Lookup(dim string) (kind, ref string, ok bool) {
 	dim = strings.ToLower(strings.TrimSpace(dim))
 	if col, found := segmentDimensions[dim]; found {
@@ -195,6 +216,9 @@ func Lookup(dim string) (kind, ref string, ok bool) {
 	}
 	if attr, found := dictDimensions[dim]; found {
 		return "dict", attr, true
+	}
+	if propertyNameRE.MatchString(dim) {
+		return "property", dim, true
 	}
 	return "", "", false
 }
