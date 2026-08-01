@@ -155,6 +155,15 @@ func (s *Server) handleLive(w http.ResponseWriter, r *http.Request) {
 // handleLiveRedis serves the exact live count from the Redis active-session set.
 func (s *Server) handleLiveRedis(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	// The active set is only touched on writes; without a periodic sweep a
+	// session that goes silent past the heartbeat grace with no closing
+	// event would read as falsely-active until its own next event arrives
+	// (caught by cmd/validateredis on real data). Throttled so concurrent
+	// requests don't turn this into an O(active sessions) scan per call.
+	if _, err := s.live.SweepIfDue(ctx, time.Now(), 5*time.Second); err != nil {
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	n, err := s.live.ActiveCount(ctx)
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())

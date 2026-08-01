@@ -51,7 +51,12 @@ func TestApplyEvent_ActiveCount(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), n, "A paused, only B active")
 
-	// B ends -> removed entirely (state deleted, active set empty).
+	// B ends -> removed from the active set, but its state is KEPT as a
+	// tombstone (not deleted) so a later event for id "B" is recognized as
+	// belonging to an already-closed session and correctly ignored (R5) —
+	// deleting it would let a subsequent event resurrect a fresh, wrongly
+	// non-closed Accumulator. See Store.Save doc for the real-data bug this
+	// prevents.
 	_, err = s.ApplyEvent(ctx, models.RawEvent{VideoSessionID: "B", EventType: "VideoSessionEnd", Event: "VideoSessionEnd", EventTimestamp: at(60)}, 1)
 	require.NoError(t, err)
 	n, err = s.ActiveCount(ctx)
@@ -59,9 +64,18 @@ func TestApplyEvent_ActiveCount(t *testing.T) {
 	assert.Equal(t, int64(0), n, "B ended, A still paused -> nobody active")
 
 	exists := mr.Exists(stateKey("B"))
-	assert.False(t, exists, "closed session's state should be deleted")
+	assert.True(t, exists, "closed session's state persists as a tombstone (bounded by TTL)")
 	exists = mr.Exists(stateKey("A"))
 	assert.True(t, exists, "paused (not closed) session's state persists for late corrections")
+
+	// A late event for the now-closed "B" must be ignored, not treated as a
+	// fresh session — this is the exact scenario the tombstone fix protects.
+	closedAfterEnd, err := s.ApplyEvent(ctx, models.RawEvent{VideoSessionID: "B", EventType: "VideoPlay", Event: "VideoPlay", EventTimestamp: at(120)}, 1)
+	require.NoError(t, err)
+	assert.Empty(t, closedAfterEnd, "no segment emitted for an event on an already-closed session")
+	n, err = s.ActiveCount(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), n, "the late VideoPlay on closed session B must NOT resurrect it into the active set")
 }
 
 // TestApplyEvent_LateCorrection is the scenario driving the whole design: an
@@ -88,9 +102,9 @@ func TestApplyEvent_LateCorrection(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, closed, "no segment closes on a simple keepalive")
 
-	acc, expired, err := s.Load(ctx, "L", 1)
+	acc, existed, err := s.Load(ctx, "L", 1)
 	require.NoError(t, err)
-	assert.False(t, expired)
+	assert.True(t, existed, "session L already has persisted state from prior events")
 	assert.True(t, acc.Active(at(50)), "session still active after late-but-within-grace heartbeat")
 }
 
@@ -122,4 +136,28 @@ func TestApplyEvent_MatchesBatchOnSameData(t *testing.T) {
 	n, err := s.ActiveCount(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, int64(0), n)
+}
+
+// TestFixedTTL_DoesNotRefresh proves the TTL is set ONCE on key creation and
+// never extended by later writes (KEEPTTL) — the design choice discussed:
+// use the existing MAX_SEGMENT_SPAN_HOURS bound (72h) as a fixed deadline
+// rather than a sliding one refreshed on every event.
+func TestFixedTTL_DoesNotRefresh(t *testing.T) {
+	s, mr := newTestStore(t, 2*time.Second) // short TTL so the test runs fast
+	ctx := context.Background()
+	base := time.Date(2026, 7, 26, 10, 0, 0, 0, time.UTC)
+	at := func(sec int) time.Time { return base.Add(time.Duration(sec) * time.Second) }
+
+	_, err := s.ApplyEvent(ctx, models.RawEvent{VideoSessionID: "F", EventType: "VideoSessionStart", Event: "VideoSessionStart", EventTimestamp: at(0)}, 1)
+	require.NoError(t, err)
+	ttl1 := mr.TTL(stateKey("F"))
+	assert.InDelta(t, 2*time.Second, ttl1, float64(200*time.Millisecond), "fresh key gets the fixed TTL")
+
+	mr.FastForward(1 * time.Second)
+	// A second event for the SAME session must NOT push the deadline back out.
+	_, err = s.ApplyEvent(ctx, models.RawEvent{VideoSessionID: "F", EventType: "VideoPlay", Event: "VideoPlay", EventTimestamp: at(1)}, 1)
+	require.NoError(t, err)
+	ttl2 := mr.TTL(stateKey("F"))
+	assert.Less(t, ttl2, ttl1, "TTL must have counted down, not been refreshed back to the full value")
+	assert.InDelta(t, 1*time.Second, ttl2, float64(200*time.Millisecond), "remaining TTL reflects elapsed wall-clock time since creation, not a reset")
 }

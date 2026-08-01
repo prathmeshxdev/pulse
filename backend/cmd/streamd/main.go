@@ -7,16 +7,25 @@
 // insert.
 //
 // This is the design validated in internal/segments (TestStreamingMatchesBatch,
-// TestSnapshotRoundTrip) and internal/livestate (TestApplyEvent_*): streaming
-// through Redis produces byte-identical segments to the batch builder, so
-// running this instead of (or alongside) the batch pipeline does not change
-// answers — it changes freshness from "next batch run" to "sub-second".
+// TestSnapshotRoundTrip) and internal/livestate (TestApplyEvent_*), and
+// end-to-end via cmd/validateredis against both synthetic and real
+// production-shaped data: streaming through Redis produces byte-identical
+// segments to the batch builder, so running this instead of (or alongside)
+// the batch pipeline does not change answers — it changes freshness from
+// "next batch run" to "sub-second".
 //
-// Late events (session already closed and evicted from Redis, i.e. its key's
-// sliding TTL — default 48h, safely above the measured 43.64h max session
-// span — expired) are NOT silently dropped: streamd logs them and leaves
-// reconciliation to `cmd/reconcile`, which rebuilds from the durable
-// raw_events log. This is the documented reconcile-or-drop boundary.
+// Late events (session already closed and evicted, i.e. its key's fixed —
+// non-refreshing — TTL, default 72h = MAX_SEGMENT_SPAN_HOURS, safely above
+// the measured 43.64h max session span, has expired) are NOT silently
+// dropped: streamd logs them and leaves reconciliation to `cmd/reconcile`,
+// which rebuilds from the durable raw_events log. This is the documented
+// reconcile-or-drop boundary.
+//
+// A background Sweep() loop runs alongside replay (see -sweep-every) so the
+// live active-count stays wall-clock accurate: the active set is otherwise
+// only touched on writes, so a session that goes silent past the heartbeat
+// grace without a closing event would linger as falsely-active until its own
+// next event happens to trigger the gap check (caught by cmd/validateredis).
 package main
 
 import (
@@ -25,7 +34,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"sort"
 	"syscall"
 	"time"
 
@@ -38,6 +46,7 @@ import (
 	"github.com/prathmeshxdev/pulse/internal/deltas"
 	"github.com/prathmeshxdev/pulse/internal/livestate"
 	"github.com/prathmeshxdev/pulse/internal/models"
+	"github.com/prathmeshxdev/pulse/internal/segments"
 )
 
 func main() {
@@ -47,8 +56,9 @@ func main() {
 	redisPassword := flag.String("redis-password", os.Getenv("REDIS_PASSWORD"), "Redis password (or set REDIS_PASSWORD)")
 	configPath := flag.String("config", "", "path to config.env")
 	speed := flag.Float64("speed", 0, "replay speed multiplier of real time (0 = as fast as possible, no sleeping)")
-	ttlHours := flag.Int("ttl-hours", 48, "sliding Redis state TTL / max accepted lateness, in hours")
+	ttlHours := flag.Int("ttl-hours", 72, "fixed (non-refreshing) Redis state TTL / max accepted lateness, in hours — default = MAX_SEGMENT_SPAN_HOURS")
 	statusEvery := flag.Duration("status-every", 5*time.Second, "how often to print active-count status")
+	sweepEvery := flag.Duration("sweep-every", 10*time.Second, "how often (in the REPLAYED event timeline, not wall-clock) to evict silent sessions from the active set — required for an accurate active-count read; see livestate.Store.Sweep")
 	flag.Parse()
 
 	if *inPath == "" || *dsn == "" {
@@ -64,7 +74,11 @@ func main() {
 
 	events, err := csvload.ReadCSV(*inPath)
 	must(err, "read csv")
-	sort.SliceStable(events, func(i, j int) bool { return events[i].EventTimestamp.Before(events[j].EventTimestamp) })
+	// Canonical (timestamp, event_type, event) order — same-timestamp ties MUST
+	// break identically to the batch builder (segments.SortEvents), or a
+	// streamed session can diverge from its batch-built segments. See
+	// segments.EventLess doc for the real-data bug this guards against.
+	segments.SortEvents(events)
 	if len(events) == 0 {
 		fmt.Fprintln(os.Stderr, "no events")
 		os.Exit(1)
@@ -87,17 +101,18 @@ func main() {
 	fmt.Printf("streamd: replaying %d events from %s (speed=%v, ttl=%dh)\n", len(events), *inPath, *speed, *ttlHours)
 
 	var (
-		processed, finalized int
-		lastStatus           time.Time
-		firstEventTS         = events[0].EventTimestamp
-		replayStart          = time.Now()
+		processed, finalized, evicted int
+		lastStatus                    time.Time
+		lastSweep                     = events[0].EventTimestamp
+		firstEventTS                  = events[0].EventTimestamp
+		replayStart                   = time.Now()
 	)
 
 	for _, e := range events {
 		select {
 		case <-ctx.Done():
 			fmt.Println("\nstreamd: shutting down (signal received)")
-			printSummary(processed, finalized)
+			printSummary(processed, finalized, evicted)
 			return
 		default:
 		}
@@ -125,6 +140,23 @@ func main() {
 			finalized += len(closedSegs)
 		}
 
+		// Sweep on the REPLAYED (event-time) clock, not wall-clock: at
+		// -speed=0 (fastest possible) real time barely advances even though
+		// the simulated timeline covers the whole dataset, so a wall-clock
+		// ticker would never fire during replay and the active set would run
+		// stale exactly the way cmd/validateredis caught. In a true live
+		// deployment (events arriving close to real time), this is
+		// equivalent to a periodic wall-clock sweep.
+		if e.EventTimestamp.Sub(lastSweep) >= *sweepEvery {
+			n, err := store.Sweep(ctx, e.EventTimestamp)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "streamd: sweep: %v\n", err)
+			} else {
+				evicted += n
+			}
+			lastSweep = e.EventTimestamp
+		}
+
 		if time.Since(lastStatus) >= *statusEvery {
 			n, _ := store.ActiveCount(ctx)
 			fmt.Printf("  [t=%s] processed=%d finalized_segments=%d active_now=%d\n",
@@ -133,8 +165,13 @@ func main() {
 		}
 	}
 
+	// Final sweep so the closing summary/active-count reflects fully-settled state.
+	if n, err := store.Sweep(ctx, events[len(events)-1].EventTimestamp); err == nil {
+		evicted += n
+	}
+
 	fmt.Println("streamd: replay complete")
-	printSummary(processed, finalized)
+	printSummary(processed, finalized, evicted)
 }
 
 // writeFinalized inserts newly-closed segments plus their any-overlap delta
@@ -174,8 +211,8 @@ func defaultRedisAddr() string {
 	return "localhost:6379"
 }
 
-func printSummary(processed, finalized int) {
-	fmt.Printf("streamd: processed=%d events, finalized=%d segments\n", processed, finalized)
+func printSummary(processed, finalized, evicted int) {
+	fmt.Printf("streamd: processed=%d events, finalized=%d segments, swept=%d stale-active evictions\n", processed, finalized, evicted)
 }
 
 func must(err error, ctx string) {

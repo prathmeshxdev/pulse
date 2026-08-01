@@ -110,8 +110,11 @@ type ServerConfig struct {
 	// for two different things (query cache vs. live session state).
 	LiveEnabled bool
 	// LiveTTL bounds how late an event may arrive and still be folded into its
-	// session via the fast Redis path (sliding TTL). Default 48h — comfortably
-	// above the measured 43.64h max session span in the training data.
+	// session via the fast Redis path. FIXED (non-refreshing) — set once when
+	// a session's key is first created, never extended by later writes. Zero
+	// defaults to Constants.MaxSegmentSpanHours (72h in the locked config),
+	// reusing the same bound the R9 query lookback already asserts no segment
+	// exceeds (measured max in the training data: 43.64h, ~28h of margin).
 	// Sessions silent longer than this are reconcile-or-drop (cmd/reconcile).
 	LiveTTL   time.Duration
 	Constants Constants
@@ -128,8 +131,10 @@ func LoadServerConfig() ServerConfig {
 		PreflightLockTTL:  durationOr("PREFLIGHT_LOCK_TTL", 30*time.Second),
 		PreflightWait:     durationOr("PREFLIGHT_WAIT_TIMEOUT", 10*time.Second),
 		LiveEnabled:       envOr("LIVE_ENABLED", "true") == "true",
-		LiveTTL:           durationOr("LIVE_TTL", 48*time.Hour),
-		Constants:         DefaultConstants(),
+		// 0 = fall back to Constants.MaxSegmentSpanHours inside livestate.New;
+		// LIVE_TTL lets an operator override that explicitly if ever needed.
+		LiveTTL:   durationOr("LIVE_TTL", 0),
+		Constants: DefaultConstants(),
 	}
 	if path := os.Getenv("CONFIG_ENV"); path != "" {
 		if loaded, err := LoadConstantsFromEnvFile(path); err == nil {

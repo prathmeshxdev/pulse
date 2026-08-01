@@ -350,7 +350,20 @@ func (st *sessionState) closeSegment(end time.Time, reason string, isFinal bool,
 	return seg
 }
 
-func eventLess(a, b models.RawEvent) bool {
+func eventLess(a, b models.RawEvent) bool { return EventLess(a, b) }
+
+// EventLess is the CANONICAL per-session event order: (event_timestamp,
+// event_type, event). Same-timestamp events are common in real data (e.g.
+// VideoSessionStart and VideoPlay both stamped at session start) and the
+// state machine's outcome depends on which is applied first — so ANY caller
+// that sorts events before feeding them to an Accumulator (batch, streamd,
+// reconcile, or a validation harness) MUST use this exact order. Sorting by
+// timestamp alone and leaving ties in arrival/query order was a real bug
+// caught by TestStreamingMatchesBatchOnRealData: it let a same-timestamp
+// event apply in a different order than the sort in BuildSession, producing
+// segments that legitimately differed from batch (extra "pause" closes) on
+// real production-shaped data even though every unit-test fixture passed.
+func EventLess(a, b models.RawEvent) bool {
 	if !a.EventTimestamp.Equal(b.EventTimestamp) {
 		return a.EventTimestamp.Before(b.EventTimestamp)
 	}
@@ -358,6 +371,13 @@ func eventLess(a, b models.RawEvent) bool {
 		return a.EventType < b.EventType
 	}
 	return a.Event < b.Event
+}
+
+// SortEvents sorts events in place using the canonical EventLess order. Use
+// this (not a bespoke timestamp-only sort) anywhere events are ordered before
+// streaming/replaying them through an Accumulator.
+func SortEvents(events []models.RawEvent) {
+	sort.SliceStable(events, func(i, j int) bool { return EventLess(events[i], events[j]) })
 }
 
 // SegmentID is cityHash64-equivalent deterministic ID: FNV-1a 64 over
