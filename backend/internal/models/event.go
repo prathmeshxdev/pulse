@@ -37,10 +37,12 @@ const (
 	SignalBackground Signal = "background"
 	SignalForeground Signal = "foreground"
 	SignalError      Signal = "error"
-	SignalPause      Signal = "pause"
-	SignalResume     Signal = "resume"
-	SignalKeepalive  Signal = "keepalive"
-	SignalIgnore     Signal = "ignore"
+	SignalPause       Signal = "pause"
+	SignalResume      Signal = "resume"
+	SignalKeepalive   Signal = "keepalive"
+	SignalBufferStart Signal = "buffer_start"
+	SignalBufferEnd   Signal = "buffer_end"
+	SignalIgnore      Signal = "ignore"
 )
 
 // Segment is one contiguous foreground-active interval.
@@ -78,5 +80,6 @@ const (
 	CloseReasonHeartbeat   = "heartbeat_gap"
 	CloseReasonSessionEnd  = "session_end"
 	CloseReasonError       = "error"
+	CloseReasonBuffer      = "buffer"
 	CloseReasonWatermark   = "open_at_watermark"
 )

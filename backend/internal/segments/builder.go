@@ -91,13 +91,27 @@ func (b *Builder) BuildSession(sessionID string, events []models.RawEvent, water
 			st.maybeOpen(e)
 
 		case models.SignalKeepalive:
-			// Gate is mandatory: foreground AND playing (SEMANTICS_SPEC §2).
-			if st.foreground && st.playing && st.sessionOpen {
-				if !st.inActive {
-					st.openSegment(e)
-				} else {
-					st.lastKeepalive = e.EventTimestamp
+			st.keepalive(e)
+
+		case models.SignalBufferStart:
+			if st.bufferActive {
+				// D3 locked default: buffering is active → keepalive.
+				st.keepalive(e)
+			} else {
+				// Flip: a stall is inactive. Close the segment and latch buffering
+				// so intervening keepalives can't reopen it until BufferEnd.
+				if st.inActive {
+					segs = append(segs, st.closeSegment(e.EventTimestamp, models.CloseReasonBuffer, false, b.version))
 				}
+				st.buffering = true
+			}
+
+		case models.SignalBufferEnd:
+			if st.bufferActive {
+				st.keepalive(e)
+			} else {
+				st.buffering = false
+				st.maybeOpen(e)
 			}
 
 		case models.SignalPause:
@@ -150,7 +164,6 @@ func (b *Builder) BuildSession(sessionID string, events []models.RawEvent, water
 		case models.SignalIgnore:
 			// no-op
 		}
-		_ = st.bufferActive // reserved for sensitivity flip of D3
 	}
 
 	// Still active at end of known data → clamp to watermark (R8).
@@ -178,6 +191,7 @@ type sessionState struct {
 	closed       bool
 	foreground   bool
 	playing      bool
+	buffering    bool // only set when BUFFERING_COUNTS_AS_ACTIVE is false (D3 flip)
 	inActive     bool
 	segmentStart time.Time
 	lastKeepalive time.Time
@@ -188,8 +202,20 @@ type sessionState struct {
 }
 
 func (st *sessionState) maybeOpen(e models.RawEvent) {
-	if st.sessionOpen && st.foreground && st.playing && !st.inActive {
+	if st.sessionOpen && st.foreground && st.playing && !st.inActive && !st.buffering {
 		st.openSegment(e)
+	}
+}
+
+// keepalive extends the active segment (or opens one) when all active conditions
+// hold. Shared by VideoHeartbeat and, under the locked D3 default, buffer events.
+func (st *sessionState) keepalive(e models.RawEvent) {
+	if st.foreground && st.playing && st.sessionOpen && !st.buffering {
+		if !st.inActive {
+			st.openSegment(e)
+		} else {
+			st.lastKeepalive = e.EventTimestamp
+		}
 	}
 }
 
