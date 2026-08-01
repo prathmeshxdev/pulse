@@ -11,10 +11,10 @@ services:
     image: docker.hyperdx.io/hyperdx/hyperdx-all-in-one:latest
     restart: unless-stopped
     ports:
-      - "8080:8080"   # HyperDX UI
+      - "8081:8080"   # HyperDX UI (8081 to avoid clashing with the Pulse API on 8080)
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP  ← OTEL_EXPORTER_OTLP_ENDPOINT target
-      - "8123:8123"   # ClickStack's own ClickHouse (observability store)
+      - "8124:8123"   # ClickStack's own ClickHouse (8124 to avoid clashes)
     volumes:
       - clickstack-data:/data
 

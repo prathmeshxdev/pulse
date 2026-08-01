@@ -1,41 +1,41 @@
 [
   {
-    "memory_usage": 2611654,
-    "query_duration_ms": 15,
+    "memory_usage": 36865504,
+    "query_duration_ms": 17,
     "query_id": "pulse-bench-0",
     "read_bytes": 911216,
     "read_rows": 81611,
     "result_rows": 1
   },
   {
-    "memory_usage": 2596246,
-    "query_duration_ms": 14,
+    "memory_usage": 2591752,
+    "query_duration_ms": 13,
     "query_id": "pulse-bench-1",
     "read_bytes": 911216,
     "read_rows": 81611,
     "result_rows": 1
   },
   {
-    "memory_usage": 2593014,
-    "query_duration_ms": 14,
+    "memory_usage": 2595416,
+    "query_duration_ms": 13,
     "query_id": "pulse-bench-2",
     "read_bytes": 911216,
     "read_rows": 81611,
     "result_rows": 1
   },
   {
-    "memory_usage": 9839519,
+    "memory_usage": 39006592,
     "query_duration_ms": 34,
     "query_id": "pulse-bench-3",
-    "read_bytes": 3560358,
+    "read_bytes": 3043302,
     "read_rows": 146193,
     "result_rows": 1
   },
   {
-    "memory_usage": 9823035,
-    "query_duration_ms": 34,
+    "memory_usage": 39311644,
+    "query_duration_ms": 32,
     "query_id": "pulse-bench-4",
-    "read_bytes": 3559414,
+    "read_bytes": 3042716,
     "read_rows": 146193,
     "result_rows": 1
   }

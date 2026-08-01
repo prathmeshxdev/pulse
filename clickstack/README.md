@@ -20,7 +20,7 @@ asserted.
 ## Run
 
 ```bash
-docker compose up -d                       # HyperDX UI on :8080, OTLP on :4318
+docker compose up -d                       # HyperDX UI on :8081, OTLP on :4318
 # start the API pointed at it:
 cd ../backend
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 \

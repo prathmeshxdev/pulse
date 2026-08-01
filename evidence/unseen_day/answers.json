@@ -9,7 +9,7 @@
     "peak": 2915,
     "avg": 8.151682424100064,
     "row_count": 1,
-    "latency_ms": 100.513
+    "latency_ms": 104.16
   },
   {
     "case": {
@@ -21,7 +21,7 @@
     "peak": 2915,
     "avg": 8.151682424100064,
     "row_count": 1,
-    "latency_ms": 94.047
+    "latency_ms": 92.83
   },
   {
     "case": {
@@ -33,7 +33,7 @@
     "peak": 2915,
     "avg": 8.151682424100064,
     "row_count": 1,
-    "latency_ms": 150.012
+    "latency_ms": 98.759
   },
   {
     "case": {
@@ -52,7 +52,7 @@
     "peak": 1862,
     "avg": 5.419226026190616,
     "row_count": 1,
-    "latency_ms": 113.177
+    "latency_ms": 204.284
   },
   {
     "case": {
@@ -71,6 +71,6 @@
     "peak": 2915,
     "avg": 8.151682424100064,
     "row_count": 1,
-    "latency_ms": 132.843
+    "latency_ms": 110.747
   }
 ]
