@@ -1,0 +1,18 @@
+# Local data (provided separately; symlink to an absolute local path)
+/hackathon-data
+*.csv
+
+# Local editor / assistant settings
+/.claude/
+.idea/
+.vscode/
+
+# Build output
+backend/bin/
+*.jsonl
+
+# OS
+.DS_Store
+
+# Local code-graph MCP artifact
+.code-review-graph/
