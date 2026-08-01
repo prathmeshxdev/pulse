@@ -67,7 +67,7 @@ Read in this order. Two documents are authoritative and the rest are supporting 
 | What counts as "actively watching"? | [FINAL_PLAN.md §1.4](docs/FINAL_PLAN.md#14-the-active-predicate) — four conditions, all required |
 | Why is paused playback excluded but buffering included? | [FINAL_PLAN.md R1 and R2](docs/FINAL_PLAN.md#15-the-rules-with-rationale). The asymmetry is deliberate and argued from viewer intent |
 | How are peak and average defined, exactly? | [FINAL_PLAN.md §2](docs/FINAL_PLAN.md#2-metric-definitions). One primitive: the filtered minute curve |
-| Why is the answer trustworthy without an answer key? | [VALIDATION.md](docs/VALIDATION.md) — hand-computed fixtures, automated invariants, an independent Python reference, and a published sensitivity matrix |
+| Why is the answer trustworthy without an answer key? | Hand-computed fixtures, automated invariants, a delta-vs-minute-explosion arithmetic cross-check, and a published sensitivity matrix — all runnable via `cmd/validate` (see `evidence/`) |
 | Does it scale, and where does it break? | [FINAL_PLAN.md §15](docs/FINAL_PLAN.md#15-scaling-to-100), including §15.10 on genuine weaknesses as distinct from managed trade-offs |
 | What is deliberately not built? | [FINAL_PLAN.md §12](docs/FINAL_PLAN.md#12-what-we-are-deliberately-not-building) |
 
@@ -80,21 +80,27 @@ Read in this order. Two documents are authoritative and the rest are supporting 
 
 ```
 pulse/
-├── docs/                         # FINAL_PLAN, SEMANTICS_SPEC, DDL, validation
+├── docs/                         # FINAL_PLAN, SEMANTICS_SPEC, DDL, ARCHITECTURE, validation
 ├── clickhouse/
 │   ├── migrations/               # typed DDL (no JSON columns)
 │   ├── queries/                  # benchmark spec + reconcile_session.sql
-│   └── scripts/                  # config.env, load_data.sh, replay.sh
+│   └── scripts/                  # config.env, replay.sh, unseen_day.sh, create_readonly_user.sql
 ├── backend/                      # Go module (github.com/prathmeshxdev/pulse)
 │   ├── cmd/server                # POST /api/v1/concurrency/chart, /schema/*
 │   ├── cmd/loadraw               # CSV → raw_events (native, Cloud-ready)
+│   ├── cmd/loadcontent           # content CSV → content_metadata + dict reload
 │   ├── cmd/build_segments        # state machine → segments + deltas
 │   ├── cmd/reconcile             # incremental correction (published-edge)
+│   ├── cmd/validate              # invariants + delta/explosion cross-check + sensitivity
 │   ├── cmd/bench                 # benchmark runner → answers.json + evidence
 │   ├── cmd/pipeline              # apply migrations
-│   └── internal/                 # segments, deltas, concurrency, filters, …
+│   └── internal/                 # segments, deltas, concurrency, filters, otelx, …
 ├── frontend/                     # React + Vite dashboard + live replay
-└── librechat/                    # LibreChat + ClickHouse MCP (conversational)
+├── clickstack/                   # ClickStack/HyperDX observability (OTel spans)
+├── librechat/                    # LibreChat + ClickHouse MCP (conversational)
+└── evidence/                     # generated: answers, invariants, sensitivity, query_log
 ```
 
 Per the problem statement a minimal visualization is sufficient; the dashboard, replay view, and chat layer are built here as the "great looks like" surface, all reading the same serving layer.
+
+**One-command unseen day:** `clickhouse/scripts/unseen_day.sh <raw.csv> <content.csv>` runs the whole pipeline and emits the evidence bundle. **Validation:** `go run ./cmd/validate -dsn … -in <raw.csv>` runs the invariants, the delta-vs-explosion cross-check, and the sensitivity matrix.
