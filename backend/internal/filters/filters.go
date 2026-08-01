@@ -16,14 +16,15 @@ var segmentDimensions = map[string]string{
 	"audio_language":    "audio_language",
 	"subtitle_language": "subtitle_language",
 	"player_version":    "player_version",
-	"video_type":        "video_type",
-	"category":          "category",
 	"user_id":           "user_id",
 }
 
-// Content dictionary attributes still resolved via dictGet when not denormalised.
+// Content-dictionary attributes: 1:1 with content_id, resolved via dictGet
+// (SCHEMA_AND_DDL decision tree) rather than denormalised onto segments.
 var dictDimensions = map[string]string{
-	"title": "title",
+	"title":      "title",
+	"video_type": "video_type",
+	"category":   "category",
 }
 
 // Filter is a single equality (or IN) predicate on a known dimension.
@@ -137,4 +138,18 @@ type DimensionMeta struct {
 	Name   string `json:"name"`
 	Source string `json:"source"`
 	Type   string `json:"type"`
+}
+
+// Lookup resolves a dimension to its storage. kind is "segment" (typed column
+// on session_active_segments) or "dict" (content_dict attribute / content_metadata
+// column). ref is the column/attribute name. ok is false for unknown dimensions.
+func Lookup(dim string) (kind, ref string, ok bool) {
+	dim = strings.ToLower(strings.TrimSpace(dim))
+	if col, found := segmentDimensions[dim]; found {
+		return "segment", col, true
+	}
+	if attr, found := dictDimensions[dim]; found {
+		return "dict", attr, true
+	}
+	return "", "", false
 }

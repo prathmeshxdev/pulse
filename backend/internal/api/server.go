@@ -42,6 +42,55 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /ping", s.handleHealth)
 	s.mux.HandleFunc("POST /api/v1/concurrency/chart", s.handleChart)
 	s.mux.HandleFunc("GET /api/v1/schema/dimensions", s.handleDimensions)
+	s.mux.HandleFunc("GET /api/v1/schema/values", s.handleValues)
+	s.mux.HandleFunc("GET /api/v1/schema/window", s.handleWindow)
+}
+
+// handleWindow returns the served time range so the UI can default its picker.
+func (s *Server) handleWindow(w http.ResponseWriter, r *http.Request) {
+	db := s.cfg.Constants.Database
+	rows, err := chclient.QueryMaps(r.Context(), s.ch,
+		"SELECT min(minute) AS start, max(minute) + toIntervalMinute(1) AS end FROM "+db+".minute_deltas")
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	out := map[string]any{"start": nil, "end": nil}
+	if len(rows) == 1 {
+		out["start"] = rows[0]["start"]
+		out["end"] = rows[0]["end"]
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// handleValues returns distinct values for a filterable dimension (for the UI
+// filter dropdowns). Capped; segment dims read from session_active_segments,
+// content dims from content_metadata.
+func (s *Server) handleValues(w http.ResponseWriter, r *http.Request) {
+	dim := r.URL.Query().Get("dimension")
+	kind, ref, ok := filters.Lookup(dim)
+	if !ok {
+		writeErr(w, http.StatusBadRequest, "unknown dimension: "+dim)
+		return
+	}
+	db := s.cfg.Constants.Database
+	var sql string
+	switch kind {
+	case "segment":
+		sql = "SELECT DISTINCT " + ref + " AS v FROM " + db + ".session_active_segments WHERE v != '' ORDER BY v LIMIT 500"
+	default: // dict → content_metadata column
+		sql = "SELECT DISTINCT " + ref + " AS v FROM " + db + ".content_metadata WHERE v != '' ORDER BY v LIMIT 500"
+	}
+	rows, err := chclient.QueryMaps(r.Context(), s.ch, sql)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	vals := make([]any, 0, len(rows))
+	for _, row := range rows {
+		vals = append(vals, row["v"])
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"dimension": dim, "values": vals})
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {

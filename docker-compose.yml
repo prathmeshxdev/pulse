@@ -1,0 +1,45 @@
+# Pulse — local run. Backend + frontend always; Redis for the preflight cache;
+# a local ClickHouse only under the "local" profile (omit it and set
+# CLICKHOUSE_DSN to your ClickHouse Cloud instance instead).
+#
+#   Cloud:  set CLICKHOUSE_DSN in .env, then:  docker compose up backend frontend redis
+#   Local:  docker compose --profile local up
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    profiles: ["local"]
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    volumes:
+      - ch-data:/var/lib/clickhouse
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      ADDR: ":8080"
+      # Cloud DSN wins if set; else falls back to the local clickhouse service.
+      CLICKHOUSE_DSN: ${CLICKHOUSE_DSN:-clickhouse://default:@clickhouse:9000/sony_liv}
+      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+      PREFLIGHT_ENABLED: ${PREFLIGHT_ENABLED:-true}
+    depends_on:
+      - redis
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  ch-data:

@@ -1,0 +1,16 @@
+[
+  { "name": "unfiltered_minute", "grain": "minute", "metric": "summary" },
+  { "name": "unfiltered_hour",   "grain": "hour",   "metric": "summary" },
+  { "name": "unfiltered_day",    "grain": "day",    "metric": "summary" },
+
+  { "name": "android_minute", "grain": "minute", "metric": "summary",
+    "filters": [{ "dimension": "platform", "op": "eq", "value": "ANDROID" }] },
+
+  { "name": "india_live_hour", "grain": "hour", "metric": "summary",
+    "filters": [
+      { "dimension": "country",    "op": "eq", "value": "IN" },
+      { "dimension": "video_type", "op": "eq", "value": "Live" }
+    ] },
+
+  { "name": "timeseries_minute", "grain": "minute", "metric": "timeseries" }
+]

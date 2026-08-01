@@ -1,0 +1,135 @@
+package chclient
+
+import (
+	"context"
+	"fmt"
+	"sort"
+	"time"
+
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+
+	"github.com/prathmeshxdev/pulse/internal/models"
+)
+
+// InsertRawEvents batch-inserts into the given raw_events table (FQN, e.g.
+// "sony_liv.raw_events" or a staging table).
+func InsertRawEvents(ctx context.Context, conn driver.Conn, table string, events []models.RawEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+	stmt := fmt.Sprintf(`INSERT INTO %s
+		(video_session_id, user_id, content_id, event_type, event, event_timestamp,
+		 platform, app_version, country, audio_language, subtitle_language,
+		 player_version, session_start_epoch)`, table)
+	batch, err := conn.PrepareBatch(ctx, stmt)
+	if err != nil {
+		return err
+	}
+	for _, e := range events {
+		if err := batch.Append(
+			e.VideoSessionID, e.UserID, e.ContentID, e.EventType, e.Event, e.EventTimestamp.UTC(),
+			e.Platform, e.AppVersion, e.Country, e.AudioLanguage, e.SubtitleLanguage,
+			e.PlayerVersion, e.SessionStartEpoch.UTC(),
+		); err != nil {
+			return err
+		}
+	}
+	return batch.Send()
+}
+
+// InsertSegments batch-inserts into the given session_active_segments table
+// (FQN). Columns match migration 005 (computed_at defaults).
+func InsertSegments(ctx context.Context, conn driver.Conn, table string, segs []models.Segment) error {
+	if len(segs) == 0 {
+		return nil
+	}
+	stmt := fmt.Sprintf(`INSERT INTO %s
+		(segment_id, video_session_id, user_id, content_id, platform, country,
+		 app_version, audio_language, subtitle_language, player_version,
+		 segment_start, segment_end, is_final, close_reason, version)`, table)
+	batch, err := conn.PrepareBatch(ctx, stmt)
+	if err != nil {
+		return err
+	}
+	for _, s := range segs {
+		if err := batch.Append(
+			s.SegmentID, s.VideoSessionID, s.UserID, s.ContentID, s.Platform, s.Country,
+			s.AppVersion, s.AudioLanguage, s.SubtitleLanguage, s.PlayerVersion,
+			s.SegmentStart.UTC(), s.SegmentEnd.UTC(), s.IsFinal, s.CloseReason, s.Version,
+		); err != nil {
+			return err
+		}
+	}
+	return batch.Send()
+}
+
+// InsertDeltas batch-inserts into the given minute_deltas table (FQN).
+func InsertDeltas(ctx context.Context, conn driver.Conn, table string, rows []models.MinuteDelta) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	stmt := fmt.Sprintf("INSERT INTO %s (minute, segment_id, delta)", table)
+	batch, err := conn.PrepareBatch(ctx, stmt)
+	if err != nil {
+		return err
+	}
+	for _, d := range rows {
+		if err := batch.Append(d.Minute.UTC(), d.SegmentID, d.Delta); err != nil {
+			return err
+		}
+	}
+	return batch.Send()
+}
+
+// StageAndReplace performs an atomic per-partition swap: it builds the new data
+// in a staging table (same engine/partitioning, created AS the target) and then
+// ALTER TABLE ... REPLACE PARTITION ... FROM staging for each affected day.
+//
+// This is deliberately NOT drop-then-insert: DROP PARTITION followed by INSERT
+// leaves a window where the day's partition is empty, so a concurrent dashboard
+// or benchmark query reads missing data. REPLACE PARTITION is a single atomic
+// metadata swap — readers see either the old partition or the new one, never a
+// gap. It is also idempotent: re-running rebuilds staging and re-swaps.
+//
+// `insert` receives the staging table's FQN and must write the new rows there.
+func StageAndReplace(ctx context.Context, conn driver.Conn, database, table string, days []string, insert func(stagingFQN string) error) error {
+	if len(days) == 0 {
+		return nil
+	}
+	staging := fmt.Sprintf("%s.`_stg_%s`", database, table)
+	target := fmt.Sprintf("%s.%s", database, table)
+
+	if err := conn.Exec(ctx, fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s AS %s", staging, target)); err != nil {
+		return fmt.Errorf("create staging %s: %w", staging, err)
+	}
+	// Best-effort cleanup; leftover staging never affects the served tables.
+	defer func() { _ = conn.Exec(ctx, "DROP TABLE IF EXISTS "+staging) }()
+
+	if err := conn.Exec(ctx, "TRUNCATE TABLE "+staging); err != nil {
+		return fmt.Errorf("truncate staging %s: %w", staging, err)
+	}
+	if err := insert(staging); err != nil {
+		return fmt.Errorf("stage insert: %w", err)
+	}
+	for _, d := range days {
+		sql := fmt.Sprintf("ALTER TABLE %s REPLACE PARTITION '%s' FROM %s", target, d, staging)
+		if err := conn.Exec(ctx, sql); err != nil {
+			return fmt.Errorf("replace %s partition %s: %w", target, d, err)
+		}
+	}
+	return nil
+}
+
+// PartitionDays returns the distinct toYYYYMMDD partition keys covering the times.
+func PartitionDays(times ...time.Time) []string {
+	seen := map[string]struct{}{}
+	for _, t := range times {
+		seen[t.UTC().Format("20060102")] = struct{}{}
+	}
+	out := make([]string, 0, len(seen))
+	for d := range seen {
+		out = append(out, d)
+	}
+	sort.Strings(out)
+	return out
+}

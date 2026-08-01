@@ -1,5 +1,10 @@
 -- Emit any-overlap minute deltas from session_active_segments.
--- Idempotency: DROP PARTITION for affected days before running (SCHEMA_AND_DDL §4.3 mechanism 4).
+--
+-- Idempotency without a read gap: rather than DROP PARTITION + INSERT (which
+-- leaves the day empty to concurrent readers), the Go loader (cmd/build_segments)
+-- builds these rows in a staging table and does ALTER TABLE minute_deltas
+-- REPLACE PARTITION '<day>' FROM staging — an atomic per-day swap. This raw
+-- INSERT is the pure-SQL reference; for a live table, stage-and-replace instead.
 
 INSERT INTO sony_liv.minute_deltas
 SELECT

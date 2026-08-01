@@ -1,0 +1,20 @@
+# LibreChat config — registers the ClickHouse MCP server so agents can query
+# the serving layer. See https://www.librechat.ai/docs/configuration/librechat_yaml
+version: 1.2.1
+
+mcpServers:
+  clickhouse:
+    type: sse
+    url: http://clickhouse-mcp:8001/sse
+    # Surfaced to the model as a tool group; keep the description tight so the
+    # agent reaches for it on concurrency questions.
+    description: >
+      Read-only ClickHouse access to the Sony LIV concurrency serving layer
+      (session_active_segments, minute_deltas, content_dict). Use for peak/avg
+      concurrency questions with dimension filters.
+
+interface:
+  # Keep it focused on the analytics use case.
+  modelSelect: true
+  parameters: true
+  presets: true

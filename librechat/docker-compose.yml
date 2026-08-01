@@ -1,0 +1,53 @@
+# LibreChat + ClickHouse MCP — conversational layer over the serving layer.
+# "What was peak concurrency on Android in the last hour?" → the agent calls the
+# ClickHouse MCP server, which is pointed at your serving tables (read-only).
+#
+# This does NOT fork LibreChat — it runs the published image and wires the
+# official ClickHouse MCP server (github.com/ClickHouse/mcp-clickhouse) via SSE.
+#
+# Prereqs: copy .env.example → .env and fill CH creds + one LLM API key.
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+
+  clickhouse-mcp:
+    image: mcp/clickhouse:latest
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_HOST: ${CH_HOST}
+      CLICKHOUSE_PORT: ${CH_PORT:-8443}
+      CLICKHOUSE_USER: ${CH_USER}
+      CLICKHOUSE_PASSWORD: ${CH_PASSWORD}
+      CLICKHOUSE_SECURE: ${CH_SECURE:-true}
+      CLICKHOUSE_DATABASE: ${CH_DATABASE:-sony_liv}
+      # Read-only guardrail — the MCP user should also be a readonly CH user.
+      CLICKHOUSE_READONLY: "1"
+      CLICKHOUSE_MCP_SERVER_TRANSPORT: sse
+      CLICKHOUSE_MCP_BIND_HOST: 0.0.0.0
+      CLICKHOUSE_MCP_BIND_PORT: "8001"
+    ports:
+      - "8001:8001"
+
+  librechat:
+    image: ghcr.io/danny-avila/librechat:latest
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+      - clickhouse-mcp
+    ports:
+      - "3080:3080"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3080
+      MONGO_URI: mongodb://mongodb:27017/LibreChat
+      # Provide at least one of these in .env:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./librechat.yaml:/app/librechat.yaml:ro
+
+volumes:
+  mongo-data:

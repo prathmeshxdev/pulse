@@ -1,8 +1,46 @@
-# Sony LIV Foreground-Only Concurrency
+# Pulse — Foreground-Only Concurrency (Sony LIV)
 
-Click-a-thon 2026 solution: foreground-only concurrent-viewer analytics on ClickHouse, at minute, hour, and day grain, with arbitrary dimension filters.
+Click-a-thon 2026 solution: foreground-only concurrent-viewer analytics on ClickHouse, at minute, hour, and day grain, with arbitrary dimension filters. **Pulse** is the serving layer (typed DDL + narrow sweep-line deltas), a Go segment builder / query compiler / chart API, a React dashboard with a live-replay view, and a LibreChat + ClickHouse-MCP conversational layer.
 
 **The design position, stated up front.** At ~10,866 sessions and ~10⁵ delta rows, every team's queries will be fast, so measured latency cannot be the differentiator. This solution competes on **defensible semantics and reproducible correctness**: what "actively watching" means, why paused playback is excluded while buffering is not, and why each benchmark answer is the one a viewer of the concurrency curve would read off it. The scaling argument is made analytically for 100× rather than by benchmarking a dataset that fits in cache.
+
+## Quickstart — run it
+
+Prereqs: Go 1.22+, Node 20+, and a ClickHouse (Cloud service or local). `cp .env.example .env` and set `CLICKHOUSE_DSN` (Cloud native secure port is 9440, `?secure=true`).
+
+```bash
+export CLICKHOUSE_DSN='clickhouse://default:PASS@your-instance.clickhouse.cloud:9440/sony_liv?secure=true'
+cd backend
+
+# 1. Create database, tables, dictionary
+go run ./cmd/pipeline -dsn "$CLICKHOUSE_DSN" -migrations ../clickhouse/migrations -reload-dict
+
+# 2. Load raw events + content, then build segments + deltas (idempotent)
+go run ./cmd/loadraw        -in ../hackathon-data/data/ch-hackathon-raw-data.csv -dsn "$CLICKHOUSE_DSN"
+go run ./cmd/build_segments -in ../hackathon-data/data/ch-hackathon-raw-data.csv -dsn "$CLICKHOUSE_DSN" -segments= -deltas=
+#   (content: loadraw only handles raw_events; load content via clickhouse-client
+#    or the migration+INSERT in clickhouse/scripts/load_data.sh, then -reload-dict)
+
+# 3. Benchmark set → answers.json + latency + query_log/parts evidence
+go run ./cmd/bench -dsn "$CLICKHOUSE_DSN" -spec ../clickhouse/queries/benchmark/spec.example.json -out ../evidence
+
+# 4. API (add PREFLIGHT_ENABLED=false to skip Redis)
+CLICKHOUSE_DSN="$CLICKHOUSE_DSN" PREFLIGHT_ENABLED=false go run ./cmd/server
+```
+
+Frontend (separate shell):
+
+```bash
+cd frontend && npm install && npm run dev   # http://localhost:5173 (proxies /api → :8080)
+```
+
+Or everything in containers (Cloud DSN in `.env`): `docker compose up backend frontend redis`. A local ClickHouse for dev: `docker compose --profile local up`.
+
+Incremental / open-session demo (truncate-and-replay): `clickhouse/scripts/replay.sh <raw.csv> <watermark_epoch_ms>`.
+
+Conversational layer: see [`librechat/`](librechat/) (`docker compose up -d`, then attach the ClickHouse MCP tool to an agent).
+
+The pipeline is pure Go over the native protocol, so steps 1–4 work against ClickHouse Cloud with no `clickhouse-client` install.
 
 ## Start here
 
@@ -38,15 +76,25 @@ Read in this order. Two documents are authoritative and the rest are supporting 
 - [SonyLIV problem statement](https://github.com/sidagarwal04/click-a-thon-2026/blob/main/SonyLiv/PROBLEM_STATEMENT.md)
 - [Dataset details](https://github.com/sidagarwal04/click-a-thon-2026/blob/main/SonyLiv/dataset_details.md)
 
-## Repo layout (planned)
+## Repo layout
 
 ```
-sony-liv-concurrency/
-├── docs/
-├── clickhouse/migrations/
-├── clickhouse/queries/benchmark/
-├── clickhouse/scripts/
-└── backend/                  # scope gated on FINAL_PLAN.md §16 Q4
+pulse/
+├── docs/                         # FINAL_PLAN, SEMANTICS_SPEC, DDL, validation
+├── clickhouse/
+│   ├── migrations/               # typed DDL (no JSON columns)
+│   ├── queries/                  # benchmark spec + reconcile_session.sql
+│   └── scripts/                  # config.env, load_data.sh, replay.sh
+├── backend/                      # Go module (github.com/prathmeshxdev/pulse)
+│   ├── cmd/server                # POST /api/v1/concurrency/chart, /schema/*
+│   ├── cmd/loadraw               # CSV → raw_events (native, Cloud-ready)
+│   ├── cmd/build_segments        # state machine → segments + deltas
+│   ├── cmd/reconcile             # incremental correction (published-edge)
+│   ├── cmd/bench                 # benchmark runner → answers.json + evidence
+│   ├── cmd/pipeline              # apply migrations
+│   └── internal/                 # segments, deltas, concurrency, filters, …
+├── frontend/                     # React + Vite dashboard + live replay
+└── librechat/                    # LibreChat + ClickHouse MCP (conversational)
 ```
 
-The problem statement puts polished frontends explicitly out of scope, so the product surface is intentionally minimal and its extent is an open question ([FINAL_PLAN.md §16](docs/FINAL_PLAN.md#16-open-questions) Q4) rather than a commitment.
+Per the problem statement a minimal visualization is sufficient; the dashboard, replay view, and chat layer are built here as the "great looks like" surface, all reading the same serving layer.
