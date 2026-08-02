@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "slidev --open --port 3032 slides.md",
     "build": "slidev build slides.md --out dist",
-    "export": "slidev export slides.md --format pdf --output pulse-by-layers.pdf --timeout 60000"
+    "export": "slidev export slides.md --format pdf --output ../../pulse-by-layers.pdf --timeout 60000"
   },
   "devDependencies": {
     "@slidev/cli": "^52.16.0",

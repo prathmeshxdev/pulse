@@ -28,7 +28,8 @@ reading the same ClickHouse Cloud tables.
 There is no separate “orchestrator microservice.” Batch pipeline and API share
 `backend/internal/{segments,deltas,concurrency,filters,chclient}`.
 
-Full deck: [`presentations/pulse-by-layers/`](presentations/pulse-by-layers/).
+Full deck: [`presentations/pulse-by-layers/`](presentations/pulse-by-layers/) ·
+PDF: [`pulse-by-layers.pdf`](./pulse-by-layers.pdf).
 
 ---
 

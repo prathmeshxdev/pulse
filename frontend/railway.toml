@@ -1,0 +1,15 @@
+# Railway — set service Root Directory to /frontend (repo root relative).
+# Config path in Railway settings: /frontend/railway.toml
+#
+# Variables (frontend service):
+#   BACKEND_HOST=${{backend.RAILWAY_PRIVATE_DOMAIN}}:8080
+# Name the API service "backend" so the reference resolves.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"

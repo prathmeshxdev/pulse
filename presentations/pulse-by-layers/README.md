@@ -13,8 +13,8 @@ npm run dev         # http://localhost:3032
 
 ## Contents
 
-15 slides total. PDF export committed at
-[`pulse-by-layers.pdf`](pulse-by-layers.pdf).
+16 slides total. PDF export committed at repo root:
+[`pulse-by-layers.pdf`](../../pulse-by-layers.pdf).
 
 | # | Slide |
 |---|--------|
@@ -25,13 +25,14 @@ npm run dev         # http://localhost:3032
 | 5 | Layer 01 · Tables & correction states (serving tables + compacted/live) |
 | 6 | Layer 02 · Caching (preflight + live state) |
 | 7 | Layer 03 · Query compiler (normative query + API surface) |
-| 8 | Layer 03 · Dashboard & demo — incl. live dashboard screenshot |
-| 9 | Layer 03 · LibreChat + MCP — incl. live chat screenshot |
-| 10 | Layer 04 · Observability (ClickStack + Langfuse) |
-| 11 | Scaling to 100× |
-| 12 | Assumptions & limits |
-| 13 | Trust & evidence |
-| 14 | Future scope |
+| 8 | Layer 03 · Serving query & latencies (SQL + ClickHouse Query Insights) |
+| 9 | Layer 03 · Dashboard & demo — incl. live dashboard screenshot |
+| 10 | Layer 03 · LibreChat + MCP — incl. live chat screenshot |
+| 11 | Layer 04 · Observability (ClickStack + Langfuse) |
+| 12 | Scaling to 100× |
+| 13 | Assumptions & limits |
+| 14 | Trust & evidence |
+| 15 | Future scope |
 
 ## HLD image
 

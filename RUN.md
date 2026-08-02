@@ -144,6 +144,52 @@ The API uses the read-only user from
 [`clickhouse/scripts/create_readonly_user.sql`](clickhouse/scripts/create_readonly_user.sql)
 (SELECT on serving tables only).
 
+### Railway
+
+Railway does **not** run `docker-compose.yml` from the repo root. A single service
+at `/` makes Railpack scan the monorepo and fail with *“could not determine how to
+build the app”*. Deploy **two services** from the same GitHub repo, each with its
+own root directory and Dockerfile.
+
+1. [Railway](https://railway.com) → **New Project** → **Deploy from GitHub repo** → `pulse`, branch `main`.
+2. **Delete** the auto-created root service (or change it — see step 3).
+3. **+ New → GitHub Repo** (same repo) twice — create two services:
+
+| Service name | Root directory | Config file path | Public domain |
+|--------------|----------------|------------------|---------------|
+| `backend` | `/backend` | `/backend/railway.toml` | **Off** (private only) |
+| `frontend` | `/frontend` | `/frontend/railway.toml` | **On** → port **80** |
+
+Set these under each service → **Settings** → **Build** (Root Directory, Config file path).
+
+4. **Backend variables:**
+
+| Variable | Value |
+|----------|--------|
+| `CLICKHOUSE_DSN` | `clickhouse://pulse_readonly:...@....clickhouse.cloud:9440/sony_liv?secure=true` |
+| `PREFLIGHT_ENABLED` | `false` |
+| `ADDR` | `:8080` |
+
+5. **Frontend variables** (name the API service `backend`):
+
+| Variable | Value |
+|----------|--------|
+| `BACKEND_HOST` | `${{backend.RAILWAY_PRIVATE_DOMAIN}}:8080` |
+
+6. Deploy **backend** first, then **frontend**. Verify:
+
+```bash
+curl -sf https://YOUR-APP.up.railway.app/health
+curl -sf https://YOUR-APP.up.railway.app/api/v1/schema/dimensions
+```
+
+ClickHouse stays on **ClickHouse Cloud** — load data locally with
+[`unseen_day.sh`](clickhouse/scripts/unseen_day.sh) before pointing the demo at Cloud.
+
+**If you still see Railpack errors:** open the service → **Settings** → **Build** →
+confirm **Builder** is **Dockerfile** (the `railway.toml` in each subdirectory
+forces this). Root directory must be `/backend` or `/frontend`, not `/`.
+
 ### Coolify Cloud
 
 Pulse deploys via [`docker-compose.coolify.yml`](docker-compose.coolify.yml) (API + dashboard only).
@@ -174,6 +220,7 @@ cloudflared tunnel --url http://localhost:5173
 
 Pulse ships as a standard Compose stack and deploys on open-source platforms:
 
+- **[Railway](https://railway.com)** — two services (`/backend`, `/frontend`); see [Railway](#railway) above.
 - **[Coolify](https://coolify.io)** — Docker Compose from Git; env vars `CLICKHOUSE_DSN`, `PREFLIGHT_ENABLED=false`; automatic HTTPS.
 - **[CapRover](https://caprover.com)** — same Compose stack on the VPS, or separate Dockerfile apps with `/api` proxied to one hostname.
 - **[Dokku](https://dokku.com)** — `backend/` and `frontend/` apps with nginx routing `/api` to the API service.

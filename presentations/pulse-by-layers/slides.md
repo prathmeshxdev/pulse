@@ -295,6 +295,53 @@ Dashboard · API · LibreChat · ClickStack · Langfuse
 <div class="bg-glow"></div>
 
 <div class="pl-stage">
+  <h2 class="pl-title">Layer 03 · Serving query &amp; latencies</h2>
+  <div class="pl-sub">Same compiled SQL for API · bench · dashboard · 7M-event unseen day</div>
+  <div class="pl-body">
+    <div class="pl-stat-row">
+      <div class="pl-stat"><div class="val">30 ms</div><div class="lbl">CH p50 server-side</div></div>
+      <div class="pl-stat"><div class="val">49 ms</div><div class="lbl">CH p90 server-side</div></div>
+      <div class="pl-stat"><div class="val">~248 ms</div><div class="lbl">E2E chart (minute)</div></div>
+      <div class="pl-stat"><div class="val">243K</div><div class="lbl">max rows read</div></div>
+    </div>
+    <div class="pl-cols">
+      <div class="pl-panel">
+        <h3>Compiled chart query</h3>
+        <pre class="pl-sql">WITH
+  sel AS ( … filtered segment ids … ),
+  open_edges AS ( … ±1 for still-open sessions … ),
+  opening AS ( SELECT sum(delta) … before window … ),
+  net AS ( SELECT minute, sum(delta) … in window … ),
+  grid AS ( SELECT … every minute in [start, end) … ),
+  curve AS (
+    SELECT g.minute,
+           opening.c0 + sum(net) OVER (ORDER BY g.minute) AS concurrency
+    FROM grid g LEFT JOIN net …
+  )
+SELECT minute, concurrency FROM curve ORDER BY minute;</pre>
+        <div class="pl-chip-row">
+          <span class="pl-chip">minute_deltas</span>
+          <span class="pl-chip">open_edges</span>
+          <span class="pl-chip">no raw_events</span>
+        </div>
+      </div>
+      <div class="pl-panel pl-panel-img">
+        <div class="pl-panel-img-frame">
+          <img src="/clickhouse-query-insights.png" alt="ClickHouse Cloud Query Insights — p99 latency and recent queries" />
+        </div>
+        <div class="pl-panel-img-caption">
+          ClickHouse Cloud <strong>Query Insights</strong> — p99 ~200–300 ms on select; bench via <code>cmd/bench</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+<div class="bg-glow"></div>
+
+<div class="pl-stage">
   <h2 class="pl-title">Layer 03 · Dashboard &amp; demo</h2>
   <div class="pl-sub">Minimal UI — model and serving layer are the score, not polish</div>
   <div class="pl-body">
@@ -526,7 +573,7 @@ Dashboard · API · LibreChat · ClickStack · Langfuse
         <h3>Benchmarks</h3>
         <ul>
           <li><code>cmd/bench</code> → <code>evidence/answers.json</code></li>
-          <li>Query log + parts read evidence</li>
+          <li>Query log + parts read + ClickHouse Query Insights</li>
           <li><code>unseen_day.sh</code> — full pipeline on held-out day</li>
           <li>Latency recorded; semantics scored first</li>
         </ul>

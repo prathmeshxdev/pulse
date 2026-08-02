@@ -1,23 +1,22 @@
-# Static reference — Docker builds use nginx.conf.template (BACKEND_HOST env).
-# Default BACKEND_HOST=backend:8080 matches docker-compose.coolify.yml.
-
 server {
   listen 80;
   root /usr/share/nginx/html;
   index index.html;
 
+  # SPA fallback
   location / {
     try_files $uri /index.html;
   }
 
+  # Proxy API calls to the Go backend (Compose: backend:8080; Railway: *.railway.internal).
   location /api/ {
-    proxy_pass http://backend:8080;
+    proxy_pass http://${BACKEND_HOST};
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
   }
 
   location /health {
-    proxy_pass http://backend:8080/health;
+    proxy_pass http://${BACKEND_HOST}/health;
     proxy_set_header Host $host;
   }
 }

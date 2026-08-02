@@ -73,8 +73,8 @@ See [`Architecture.md`](./Architecture.md) for the full write-up.
 Slide deck: [`presentations/pulse-by-layers/`](presentations/pulse-by-layers/) ·
 deeper narrative: [`summary.md`](./summary.md).
 
-**Pitch deck (PDF):** [`presentations/pulse-by-layers/pulse-by-layers.pdf`](presentations/pulse-by-layers/pulse-by-layers.pdf) —
-15 slides, exported from the Slidev deck (`npm run export`).
+**Pitch deck (PDF):** [`pulse-by-layers.pdf`](./pulse-by-layers.pdf) —
+16 slides, exported from the Slidev deck (`npm run export` in `presentations/pulse-by-layers/`).
 
 ## How to run it
 
@@ -152,6 +152,22 @@ SELECT minute, concurrency FROM curve ORDER BY minute;
 Peak = `max(concurrency)`; average = `avg(concurrency)` over all clock minutes in the
 window. Counting unit: `"session"` (default) or `"user"`.
 
+### Query latencies (ClickHouse Cloud)
+
+Same compiler as the API — benchmarked on the **7M-event unseen day**
+([`evidence/unseen_day/`](evidence/unseen_day/)):
+
+| Case | Peak | E2E (compiler + network) | Server-side (query_log) |
+|------|------|--------------------------|-------------------------|
+| Unfiltered minute | 18,968 | 248 ms | p50 **30 ms**, p90 **49 ms** |
+| Platform = ANDROID_PHONE | 6,084 | 285 ms | up to **243K rows** read |
+| Country = india (hour) | 18,968 | 343 ms | 6 bench queries total |
+
+![ClickHouse Cloud Query Insights — p99 latency and recent queries](evidence/screenshots/clickhouse-query-insights.png)
+
+*Query Insights on ClickHouse Cloud: p99 select latency stable around 200–300 ms;
+bench evidence in `evidence/unseen_day/query_log.json` and `answers.json`.*
+
 ---
 
 ## Integrations
@@ -227,6 +243,7 @@ Pipeline: `./clickhouse/scripts/unseen_day.sh <raw.csv> <content.csv>` ([`RUN.md
 pulse/
 ├── README.md
 ├── Architecture.md
+├── pulse-by-layers.pdf
 ├── RUN.md
 ├── summary.md
 ├── presentations/pulse-by-layers/
