@@ -66,6 +66,16 @@ services:
     ports:
       - "8001:8001"
 
+  pulse-mcp:
+    build: ./librechat/pulse-mcp
+    profiles: ["chat", "full"]
+    restart: unless-stopped
+    environment:
+      # Override to http://host.containers.internal:8080 when API runs on host (go run).
+      PULSE_API_URL: ${PULSE_API_URL:-http://backend:8080}
+    ports:
+      - "8002:8002"
+
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     profiles: ["chat", "full"]
@@ -92,7 +102,6 @@ services:
     depends_on:
       - librechat-mongodb
       - clickhouse-mcp
-      - litellm
     env_file:
       - ./librechat/.env
     ports:
@@ -103,8 +112,8 @@ services:
       MONGO_URI: mongodb://librechat-mongodb:27017/LibreChat
       ALLOW_REGISTRATION: "true"
       ALLOW_UNVERIFIED_EMAIL_LOGIN: "true"
-      # Only show LiteLLM custom endpoint (skip broken in-container Anthropic).
-      ENDPOINTS: custom
+      # custom = LiteLLM; agents = Agent Builder tab (required for Pulse MCP agent).
+      ENDPOINTS: custom,agents
       LITELLM_BASE_URL: ${LITELLM_BASE_URL:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     volumes:

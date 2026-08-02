@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	inPath := flag.String("in", "", "content metadata CSV (content_id,title,video_type,category)")
+	inPath := flag.String("in", "", "content metadata CSV (content_id,title,video_type,category[,show_name])")
 	dsn := flag.String("dsn", os.Getenv("CLICKHOUSE_DSN"), "ClickHouse DSN")
 	configPath := flag.String("config", "", "path to config.env")
 	flag.Parse()

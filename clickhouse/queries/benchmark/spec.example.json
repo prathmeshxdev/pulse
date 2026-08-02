@@ -1,5 +1,6 @@
 [
   { "name": "unfiltered_minute", "grain": "minute", "metric": "summary" },
+  { "name": "unfiltered_minute_user", "grain": "minute", "metric": "summary", "unit": "user" },
   { "name": "unfiltered_hour",   "grain": "hour",   "metric": "summary" },
   { "name": "unfiltered_day",    "grain": "day",    "metric": "summary" },
 

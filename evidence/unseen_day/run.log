@@ -1,0 +1,190 @@
+→ [1/7] migrations (show_name + dict recreate; idempotent)
+applying 001_database.sql
+applying 002_raw_events.sql
+applying 003_content_metadata.sql
+applying 004_content_dict.sql
+applying 005_session_active_segments.sql
+applying 006_open_session_state.sql
+applying 007_minute_deltas.sql
+applying 008_concurrency_minute_serving.sql
+applying 009_session_live_state.sql
+applying 010_properties.sql
+applying 011_properties_key_types.sql
+applying 012_user_concurrency.sql
+applying 013_show_name.sql
+dictionary reloaded
+done at 2026-08-02T01:36:21Z
+2026/08/02 07:06:21 traces export: Post "http://localhost:4318/v1/traces": dial tcp [::1]:4318: connect: connection refused
+→ [2/7] clear prior serving data (unseen day replaces the universe)
+ok
+2026/08/02 07:06:24 traces export: Post "http://localhost:4318/v1/traces": dial tcp [::1]:4318: connect: connection refused
+→ [3/7] content_metadata + dictionary reload
+loaded 33326 content rows into sony_liv.content_metadata + reloaded dict
+→ [4/7] raw_events (video_resolution → properties JSON)
+loaded 7000000 raw events into sony_liv.raw_events (rebuild=true)
+2026/08/02 07:12:24 traces export: Post "http://localhost:4318/v1/traces": dial tcp [::1]:4318: connect: connection refused
+→ [5/7] segments + deltas + user grain (atomic partition swap)
+clickhouse: populated concurrency_minute_serving rollup (296288 wide deltas)
+clickhouse: inserted 148144 segments + 296288 deltas into sony_liv
+events=7000000 segments=148144 deltas=296288 watermark=2026-08-03T11:26:15.032Z
+2026/08/02 07:14:03 traces export: Post "http://localhost:4318/v1/traces": dial tcp [::1]:4318: connect: connection refused
+→ [6/7] refresh properties key catalog (video_resolution etc.)
+ok
+2026/08/02 07:14:05 traces export: Post "http://localhost:4318/v1/traces": dial tcp [::1]:4318: connect: connection refused
+→ [7/7] validate + benchmark → /Users/prathmesh/Projects/pulse/evidence/unseen_day
+== Layer-5 invariants (ClickHouse) ==
+  [PASS] no_empty_segments            0 segments with end<=start
+  [PASS] no_segment_past_watermark    max segment_end +0s vs watermark
+  [PASS] no_overlapping_segments      0 overlaps
+  [PASS] segments_below_heartbeats    148144 segments vs 6736343 heartbeats
+  [PASS] no_negative_concurrency      min concurrency 0
+  [PASS] filtered_peak_le_unfiltered  platform=ANDROID_PHONE peak 6084 <= unfiltered 18968
+== Chart / breakdown consistency ==
+  [PASS] session_summary_peak_matches_timeseries  summary peak 18968.0000 vs max(timeseries) 18968.0000
+  [PASS] session_summary_avg_matches_timeseries   summary avg 0.5625 vs mean(timeseries) 0.5625
+  [PASS] session_breakdown_platform_ANDROID_PHONE_peak chart peak 6084.0000 vs breakdown 6084.0000
+  [PASS] session_breakdown_platform_ANDROID_PHONE_avg chart avg 0.1802 vs breakdown 0.1802
+  [PASS] session_breakdown_platform_JIO_ANDROID_TV_peak chart peak 4966.0000 vs breakdown 4966.0000
+  [PASS] session_breakdown_platform_JIO_ANDROID_TV_avg chart avg 0.1429 vs breakdown 0.1429
+  [PASS] session_breakdown_platform_SONY_ANDROID_TV_peak chart peak 2656.0000 vs breakdown 2656.0000
+  [PASS] session_breakdown_platform_SONY_ANDROID_TV_avg chart avg 0.0817 vs breakdown 0.0817
+  [PASS] session_breakdown_platform_SAMSUNG_HTML_TV_peak chart peak 1009.0000 vs breakdown 1009.0000
+  [PASS] session_breakdown_platform_SAMSUNG_HTML_TV_avg chart avg 0.0292 vs breakdown 0.0292
+  [PASS] session_breakdown_platform_IPHONE_peak   chart peak 709.0000 vs breakdown 709.0000
+  [PASS] session_breakdown_platform_IPHONE_avg    chart avg 0.0203 vs breakdown 0.0203
+  [PASS] session_breakdown_platform_Web_peak      chart peak 1214.0000 vs breakdown 1214.0000
+  [PASS] session_breakdown_platform_Web_avg       chart avg 0.0242 vs breakdown 0.0242
+  [PASS] session_breakdown_platform_LG_HTML_TV_peak chart peak 792.0000 vs breakdown 792.0000
+  [PASS] session_breakdown_platform_LG_HTML_TV_avg chart avg 0.0233 vs breakdown 0.0233
+  [PASS] session_breakdown_platform_FIRE_TV_peak  chart peak 649.0000 vs breakdown 649.0000
+  [PASS] session_breakdown_platform_FIRE_TV_avg   chart avg 0.0190 vs breakdown 0.0190
+  [PASS] session_breakdown_platform_XIAOMI_ANDROID_TV_peak chart peak 553.0000 vs breakdown 553.0000
+  [PASS] session_breakdown_platform_XIAOMI_ANDROID_TV_avg chart avg 0.0170 vs breakdown 0.0170
+  [PASS] session_breakdown_platform_SONY_HTML_TV_peak chart peak 259.0000 vs breakdown 259.0000
+  [PASS] session_breakdown_platform_SONY_HTML_TV_avg chart avg 0.0044 vs breakdown 0.0044
+  [PASS] session_breakdown_platform_IPAD_peak     chart peak 173.0000 vs breakdown 173.0000
+  [PASS] session_breakdown_platform_IPAD_avg      chart avg 0.0046 vs breakdown 0.0046
+  [PASS] session_breakdown_platform_VIDAA_HTML_TV_peak chart peak 126.0000 vs breakdown 126.0000
+  [PASS] session_breakdown_platform_VIDAA_HTML_TV_avg chart avg 0.0029 vs breakdown 0.0029
+  [PASS] session_breakdown_platform_ANDROID_TAB_peak chart peak 209.0000 vs breakdown 209.0000
+  [PASS] session_breakdown_platform_ANDROID_TAB_avg chart avg 0.0056 vs breakdown 0.0056
+  [PASS] session_breakdown_platform_Mweb_peak     chart peak 111.0000 vs breakdown 111.0000
+  [PASS] session_breakdown_platform_Mweb_avg      chart avg 0.0029 vs breakdown 0.0029
+  [PASS] session_breakdown_platform_SKYWORTH_HTML_TV_peak chart peak 111.0000 vs breakdown 111.0000
+  [PASS] session_breakdown_platform_SKYWORTH_HTML_TV_avg chart avg 0.0031 vs breakdown 0.0031
+  [PASS] session_breakdown_platform_APPLE_TV_peak chart peak 32.0000 vs breakdown 32.0000
+  [PASS] session_breakdown_platform_APPLE_TV_avg  chart avg 0.0009 vs breakdown 0.0009
+  [PASS] session_breakdown_platform_KEPLER_HTML_TV_peak chart peak 20.0000 vs breakdown 20.0000
+  [PASS] session_breakdown_platform_KEPLER_HTML_TV_avg chart avg 0.0001 vs breakdown 0.0001
+  [PASS] session_breakdown_platform_NETRANGE_HTML_TV_peak chart peak 4.0000 vs breakdown 4.0000
+  [PASS] session_breakdown_platform_NETRANGE_HTML_TV_avg chart avg 0.0000 vs breakdown 0.0000
+  [PASS] session_breakdown_platform_WEB_peak      chart peak 2.0000 vs breakdown 2.0000
+  [PASS] session_breakdown_platform_WEB_avg       chart avg 0.0000 vs breakdown 0.0000
+  [PASS] session_breakdown_platform_MWEB_peak     chart peak 1.0000 vs breakdown 1.0000
+  [PASS] session_breakdown_platform_MWEB_avg      chart avg 0.0000 vs breakdown 0.0000
+  [PASS] session_breakdown_platform_ROKU_TV_peak  chart peak 2.0000 vs breakdown 2.0000
+  [PASS] session_breakdown_platform_ROKU_TV_avg   chart avg 0.0000 vs breakdown 0.0000
+  [PASS] session_partition_sum_platform           0/1688027 minutes mismatch (worst delta 0.0000) — sum of platform slices vs unfiltered
+  [PASS] session_breakdown_country_india_peak     chart peak 18968.0000 vs breakdown 18968.0000
+  [PASS] session_breakdown_country_india_avg      chart avg 0.5625 vs breakdown 0.5625
+  [PASS] session_partition_sum_country            0/1688027 minutes mismatch (worst delta 0.0000) — sum of country slices vs unfiltered
+  [PASS] session_filtered_peak_le_total_platform_ANDROID_PHONE filtered peak 6084.0000 <= unfiltered 18968.0000
+  [PASS] session_filtered_peak_le_total_platform_JIO_ANDROID_TV filtered peak 4966.0000 <= unfiltered 18968.0000
+  [PASS] session_filtered_peak_le_total_platform_SONY_ANDROID_TV filtered peak 2656.0000 <= unfiltered 18968.0000
+  [PASS] session_filtered_peak_le_total_platform_SAMSUNG_HTML_TV filtered peak 1009.0000 <= unfiltered 18968.0000
+  [PASS] session_filtered_peak_le_total_platform_IPHONE filtered peak 709.0000 <= unfiltered 18968.0000
+  [PASS] session_filtered_peak_le_total_platform_Web filtered peak 1214.0000 <= unfiltered 18968.0000
+  [PASS] session_filtered_peak_le_total_platform_LG_HTML_TV filtered peak 792.0000 <= unfiltered 18968.0000
+  [PASS] session_filtered_peak_le_total_platform_FIRE_TV filtered peak 649.0000 <= unfiltered 18968.0000
+  [PASS] session_filtered_peak_le_total_platform_XIAOMI_ANDROID_TV filtered peak 553.0000 <= unfiltered 18968.0000
+  [PASS] session_filtered_peak_le_total_platform_SONY_HTML_TV filtered peak 259.0000 <= unfiltered 18968.0000
+  [PASS] session_filtered_peak_le_total_country_india filtered peak 18968.0000 <= unfiltered 18968.0000
+  [PASS] user_summary_peak_matches_timeseries     summary peak 18418.0000 vs max(timeseries) 18418.0000
+  [PASS] user_summary_avg_matches_timeseries      summary avg 0.5434 vs mean(timeseries) 0.5434
+  [PASS] user_breakdown_platform_ANDROID_PHONE_peak chart peak 6077.0000 vs breakdown 6077.0000
+  [PASS] user_breakdown_platform_ANDROID_PHONE_avg chart avg 0.1799 vs breakdown 0.1799
+  [PASS] user_breakdown_platform_JIO_ANDROID_TV_peak chart peak 4938.0000 vs breakdown 4938.0000
+  [PASS] user_breakdown_platform_JIO_ANDROID_TV_avg chart avg 0.1419 vs breakdown 0.1419
+  [PASS] user_breakdown_platform_SONY_ANDROID_TV_peak chart peak 2266.0000 vs breakdown 2266.0000
+  [PASS] user_breakdown_platform_SONY_ANDROID_TV_avg chart avg 0.0691 vs breakdown 0.0691
+  [PASS] user_breakdown_platform_SAMSUNG_HTML_TV_peak chart peak 1004.0000 vs breakdown 1004.0000
+  [PASS] user_breakdown_platform_SAMSUNG_HTML_TV_avg chart avg 0.0292 vs breakdown 0.0292
+  [PASS] user_breakdown_platform_IPHONE_peak      chart peak 709.0000 vs breakdown 709.0000
+  [PASS] user_breakdown_platform_IPHONE_avg       chart avg 0.0203 vs breakdown 0.0203
+  [PASS] user_breakdown_platform_Web_peak         chart peak 1211.0000 vs breakdown 1211.0000
+  [PASS] user_breakdown_platform_Web_avg          chart avg 0.0242 vs breakdown 0.0242
+  [PASS] user_breakdown_platform_LG_HTML_TV_peak  chart peak 788.0000 vs breakdown 788.0000
+  [PASS] user_breakdown_platform_LG_HTML_TV_avg   chart avg 0.0230 vs breakdown 0.0230
+  [PASS] user_breakdown_platform_FIRE_TV_peak     chart peak 597.0000 vs breakdown 597.0000
+  [PASS] user_breakdown_platform_FIRE_TV_avg      chart avg 0.0168 vs breakdown 0.0168
+  [PASS] user_breakdown_platform_XIAOMI_ANDROID_TV_peak chart peak 484.0000 vs breakdown 484.0000
+  [PASS] user_breakdown_platform_XIAOMI_ANDROID_TV_avg chart avg 0.0144 vs breakdown 0.0144
+  [PASS] user_breakdown_platform_SONY_HTML_TV_peak chart peak 259.0000 vs breakdown 259.0000
+  [PASS] user_breakdown_platform_SONY_HTML_TV_avg chart avg 0.0044 vs breakdown 0.0044
+  [PASS] user_breakdown_platform_IPAD_peak        chart peak 173.0000 vs breakdown 173.0000
+  [PASS] user_breakdown_platform_IPAD_avg         chart avg 0.0046 vs breakdown 0.0046
+  [PASS] user_breakdown_platform_VIDAA_HTML_TV_peak chart peak 126.0000 vs breakdown 126.0000
+  [PASS] user_breakdown_platform_VIDAA_HTML_TV_avg chart avg 0.0029 vs breakdown 0.0029
+  [PASS] user_breakdown_platform_ANDROID_TAB_peak chart peak 208.0000 vs breakdown 208.0000
+  [PASS] user_breakdown_platform_ANDROID_TAB_avg  chart avg 0.0056 vs breakdown 0.0056
+  [PASS] user_breakdown_platform_Mweb_peak        chart peak 111.0000 vs breakdown 111.0000
+  [PASS] user_breakdown_platform_Mweb_avg         chart avg 0.0029 vs breakdown 0.0029
+  [PASS] user_breakdown_platform_SKYWORTH_HTML_TV_peak chart peak 111.0000 vs breakdown 111.0000
+  [PASS] user_breakdown_platform_SKYWORTH_HTML_TV_avg chart avg 0.0031 vs breakdown 0.0031
+  [PASS] user_breakdown_platform_APPLE_TV_peak    chart peak 32.0000 vs breakdown 32.0000
+  [PASS] user_breakdown_platform_APPLE_TV_avg     chart avg 0.0009 vs breakdown 0.0009
+  [PASS] user_breakdown_platform_KEPLER_HTML_TV_peak chart peak 20.0000 vs breakdown 20.0000
+  [PASS] user_breakdown_platform_KEPLER_HTML_TV_avg chart avg 0.0001 vs breakdown 0.0001
+  [PASS] user_breakdown_platform_NETRANGE_HTML_TV_peak chart peak 4.0000 vs breakdown 4.0000
+  [PASS] user_breakdown_platform_NETRANGE_HTML_TV_avg chart avg 0.0000 vs breakdown 0.0000
+  [PASS] user_breakdown_platform_WEB_peak         chart peak 2.0000 vs breakdown 2.0000
+  [PASS] user_breakdown_platform_WEB_avg          chart avg 0.0000 vs breakdown 0.0000
+  [PASS] user_breakdown_platform_MWEB_peak        chart peak 1.0000 vs breakdown 1.0000
+  [PASS] user_breakdown_platform_MWEB_avg         chart avg 0.0000 vs breakdown 0.0000
+  [PASS] user_breakdown_platform_ROKU_TV_peak     chart peak 2.0000 vs breakdown 2.0000
+  [PASS] user_breakdown_platform_ROKU_TV_avg      chart avg 0.0000 vs breakdown 0.0000
+  [PASS] user_partition_sum_platform              0/1688027 minutes mismatch (worst delta 0.0000) — sum of platform slices vs unfiltered
+  [PASS] user_breakdown_country_india_peak        chart peak 18418.0000 vs breakdown 18418.0000
+  [PASS] user_breakdown_country_india_avg         chart avg 0.5434 vs breakdown 0.5434
+  [PASS] user_partition_sum_country               0/1688027 minutes mismatch (worst delta 0.0000) — sum of country slices vs unfiltered
+  [PASS] user_filtered_peak_le_total_platform_ANDROID_PHONE filtered peak 6077.0000 <= unfiltered 18418.0000
+  [PASS] user_filtered_peak_le_total_platform_JIO_ANDROID_TV filtered peak 4938.0000 <= unfiltered 18418.0000
+  [PASS] user_filtered_peak_le_total_platform_SONY_ANDROID_TV filtered peak 2266.0000 <= unfiltered 18418.0000
+  [PASS] user_filtered_peak_le_total_platform_SAMSUNG_HTML_TV filtered peak 1004.0000 <= unfiltered 18418.0000
+  [PASS] user_filtered_peak_le_total_platform_IPHONE filtered peak 709.0000 <= unfiltered 18418.0000
+  [PASS] user_filtered_peak_le_total_platform_Web filtered peak 1211.0000 <= unfiltered 18418.0000
+  [PASS] user_filtered_peak_le_total_platform_LG_HTML_TV filtered peak 788.0000 <= unfiltered 18418.0000
+  [PASS] user_filtered_peak_le_total_platform_FIRE_TV filtered peak 597.0000 <= unfiltered 18418.0000
+  [PASS] user_filtered_peak_le_total_platform_XIAOMI_ANDROID_TV filtered peak 484.0000 <= unfiltered 18418.0000
+  [PASS] user_filtered_peak_le_total_platform_SONY_HTML_TV filtered peak 259.0000 <= unfiltered 18418.0000
+  [PASS] user_filtered_peak_le_total_country_india filtered peak 18418.0000 <= unfiltered 18418.0000
+== Layer-4 cross-check (delta-cumsum vs minute-explosion) ==
+  peak: delta=18968 explosion=18968  PASS
+  avg : delta=0.5625 explosion=0.5625  PASS
+== Layer-6 sensitivity → /Users/prathmesh/Projects/pulse/evidence/unseen_day/sensitivity.md ==
+  baseline (pause excluded, buffering active)    peak=18968 (+0.0%) avg=0.56 (+0.0%)
+  PAUSE_COUNTS_AS_ACTIVE = true (D2 flipped)     peak=19587 (+3.3%) avg=0.58 (+3.4%)
+  BUFFERING_COUNTS_AS_ACTIVE = false (D3 flipped) peak=22180 (+16.9%) avg=0.67 (+18.9%)
+
+all checks passed
+data window: 2023-05-17T05:23:00Z .. 2026-08-01T11:10:00Z
+  unfiltered_minute            grain=minute peak=18968.00 avg=0.56 rows=1 247.7ms
+  unfiltered_minute_user       grain=minute peak=18418.00 avg=0.54 rows=1 254.3ms
+  unfiltered_hour              grain=hour   peak=18968.00 avg=0.56 rows=1 258.3ms
+  unfiltered_day               grain=day    peak=18968.00 avg=0.56 rows=1 249.5ms
+  platform_ANDROID_PHONE       grain=minute peak=6084.00 avg=0.18 rows=1 285.4ms
+  country_india                grain=hour   peak=18968.00 avg=0.56 rows=1 343.4ms
+server-side latency: p50=30ms p90=49ms max=49ms | max rows read=243066 (n=6)
+wrote /Users/prathmesh/Projects/pulse/evidence/unseen_day/{answers,parts,query_log}.json
+
+=== unseen-day answers ===
+  unfiltered_minute          grain=minute peak=18968 avg=0.563 248ms
+  unfiltered_minute_user     grain=minute peak=18418 avg=0.543 254ms
+  unfiltered_hour            grain=hour   peak=18968 avg=0.563 258ms
+  unfiltered_day             grain=day    peak=18968 avg=0.563 249ms
+  platform_ANDROID_PHONE     grain=minute peak=6084 avg=0.18 285ms
+  country_india              grain=hour   peak=18968 avg=0.563 343ms
+
+Evidence bundle: /Users/prathmesh/Projects/pulse/evidence/unseen_day/{answers,invariants,sensitivity,parts,query_log}
+→ answers.json (results), invariants.json (correctness), sensitivity.md,
+  query_log.json (rows read + server-side latency), parts.json (part counts).

@@ -400,13 +400,12 @@ transition: fade
       <div class="pl-panel">
         <h3>Honest limits</h3>
         <ul>
-          <li>Agent writes raw SQL — <strong>not</strong> the same compiler as the API</li>
-          <li>Same tables &amp; semantics; different query logic → answers can diverge</li>
-          <li>No custom MCP proxy yet (future: force API-parity templates, caching benefits, etc)</li>
-          <li>Metadata for dynamic keys: agent queries <code>properties_key_mappings</code> or uses prompt catalog</li>
+          <li><strong>pulse MCP</strong> proxies the chart/breakdown API — same compiler as the dashboard</li>
+          <li>Optional ClickHouse MCP for schema inspection only — not for concurrency numbers</li>
+          <li>Metadata for dynamic keys: <code>schema_dimensions</code> tool or <code>properties_key_mappings</code></li>
         </ul>
         <div class="pl-callout">
-          Example: <em>“Peak concurrency on ANDROID_PHONE between 13:00–14:00 UTC?”</em> → MCP tool → <code>minute_deltas</code> + semi-join.
+          Example: <em>“Peak concurrency on ANDROID_PHONE between 13:00–14:00 UTC?”</em> → <code>pulse</code> MCP → <code>/api/v1/concurrency/chart</code>.
         </div>
       </div>
     </div>

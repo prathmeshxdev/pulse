@@ -10,6 +10,9 @@
 # Build output
 backend/bin/
 *.jsonl
+**/node_modules/
+dump.rdb
+*.rdb
 
 # OS
 .DS_Store

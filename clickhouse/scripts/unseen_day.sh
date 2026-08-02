@@ -9,6 +9,7 @@
 #
 # Usage: unseen_day.sh <raw.csv> <content.csv> [dsn]
 set -euo pipefail
+# Keep pipefail so failures still surface when callers wrap with `| tee`.
 
 RAW_CSV="${1:?usage: unseen_day.sh <raw.csv> <content.csv> [dsn]}"
 CONTENT_CSV="${2:?content CSV required}"
@@ -21,19 +22,53 @@ EVID="${ROOT}/evidence/unseen_day"
 mkdir -p "$EVID"
 
 cd "$BACKEND"
-echo "→ [1/5] migrations (idempotent)"
+echo "→ [1/7] migrations (show_name + dict recreate; idempotent)"
 go run ./cmd/pipeline       -dsn "$DSN" -migrations ../clickhouse/migrations -reload-dict
 
-echo "→ [2/5] content_metadata + dictionary"
+echo "→ [2/7] clear prior serving data (unseen day replaces the universe)"
+go run ./cmd/pipeline -dsn "$DSN" -exec "$(cat <<'SQL'
+TRUNCATE TABLE IF EXISTS sony_liv.raw_events;
+TRUNCATE TABLE IF EXISTS sony_liv.session_active_segments;
+TRUNCATE TABLE IF EXISTS sony_liv.minute_deltas;
+TRUNCATE TABLE IF EXISTS sony_liv.user_active_segments;
+TRUNCATE TABLE IF EXISTS sony_liv.user_minute_deltas;
+TRUNCATE TABLE IF EXISTS sony_liv.concurrency_minute_serving;
+TRUNCATE TABLE IF EXISTS sony_liv.open_session_state;
+TRUNCATE TABLE IF EXISTS sony_liv.session_live_state;
+TRUNCATE TABLE IF EXISTS sony_liv.properties_key_mappings;
+SQL
+)"
+
+echo "→ [3/7] content_metadata + dictionary reload"
 go run ./cmd/loadcontent    -in "$CONTENT_CSV" -dsn "$DSN" -config "$CONFIG"
 
-echo "→ [3/5] raw_events"
+echo "→ [4/7] raw_events (video_resolution → properties JSON)"
 go run ./cmd/loadraw        -in "$RAW_CSV" -dsn "$DSN" -config "$CONFIG" -rebuild=true
 
-echo "→ [4/5] segments + deltas (atomic partition swap)"
+echo "→ [5/7] segments + deltas + user grain (atomic partition swap)"
 go run ./cmd/build_segments -in "$RAW_CSV" -dsn "$DSN" -config "$CONFIG" -segments= -deltas= -rebuild=true
 
-echo "→ [5/5] validate + benchmark → ${EVID}"
+echo "→ [6/7] refresh properties key catalog (video_resolution etc.)"
+go run ./cmd/pipeline -dsn "$DSN" -exec "
+INSERT INTO sony_liv.properties_key_mappings
+SELECT
+    source,
+    distinctJSONPathsAndTypes(properties) AS paths,
+    now() AS refreshed_at
+FROM
+(
+    SELECT 'raw_events' AS source, properties
+    FROM sony_liv.raw_events
+    WHERE NOT empty(JSONDynamicPaths(properties))
+    UNION ALL
+    SELECT 'session_active_segments' AS source, properties
+    FROM sony_liv.session_active_segments FINAL
+    WHERE NOT empty(JSONDynamicPaths(properties))
+)
+GROUP BY source
+"
+
+echo "→ [7/7] validate + benchmark → ${EVID}"
 go run ./cmd/validate       -dsn "$DSN" -in "$RAW_CSV" -config "$CONFIG" -out "$EVID"
 go run ./cmd/bench          -dsn "$DSN" -config "$CONFIG" -out "$EVID" -sql=false
 

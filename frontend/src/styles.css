@@ -53,6 +53,48 @@ button { cursor: pointer; }
 .kpi .value { font-size: 32px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
 .kpi .value.accent { color: var(--accent); }
 
+.agg-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.agg-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  min-height: 140px;
+}
+.agg-panel-wide {
+  grid-column: 1 / -1;
+  min-height: 320px;
+}
+.agg-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.agg-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.agg-value {
+  font-size: 40px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.agg-value.accent { color: var(--accent); }
+.agg-sub { margin-top: 6px; font-size: 13px; }
+.agg-desc { margin: 12px 0 0; font-size: 12px; line-height: 1.4; }
+.agg-foot { margin-top: 8px; font-size: 12px; }
+
 .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
 .card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; color: var(--muted); }
 

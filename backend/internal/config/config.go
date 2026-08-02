@@ -43,6 +43,14 @@ func (c Constants) MaxSegmentSpan() time.Duration {
 	return time.Duration(c.MaxSegmentSpanHours) * time.Hour
 }
 
+// DefaultCountUnit maps SESSION_GRAIN config to the chart/bench counting unit.
+func (c Constants) DefaultCountUnit() string {
+	if strings.EqualFold(c.SessionGrain, "user_id") {
+		return "user"
+	}
+	return "session"
+}
+
 // LoadConstantsFromEnvFile reads clickhouse/scripts/config.env style KEY=VALUE lines.
 func LoadConstantsFromEnvFile(path string) (Constants, error) {
 	c := DefaultConstants()

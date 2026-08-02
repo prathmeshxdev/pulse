@@ -17,7 +17,7 @@
   {
     "name": "segments_below_heartbeats",
     "pass": true,
-    "detail": "32291 segments vs 843600 heartbeats"
+    "detail": "148144 segments vs 6736343 heartbeats"
   },
   {
     "name": "no_negative_concurrency",
@@ -27,6 +27,6 @@
   {
     "name": "filtered_peak_le_unfiltered",
     "pass": true,
-    "detail": "platform=ANDROID_PHONE peak 1862 \u003c= unfiltered 2915"
+    "detail": "platform=ANDROID_PHONE peak 6084 \u003c= unfiltered 18968"
   }
 ]

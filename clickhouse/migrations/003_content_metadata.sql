@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS sony_liv.content_metadata
     title      String,
     video_type LowCardinality(String),
     category   LowCardinality(String),
+    show_name  String DEFAULT '',
     loaded_at  DateTime('UTC') DEFAULT now()
 )
 ENGINE = MergeTree

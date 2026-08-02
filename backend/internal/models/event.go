@@ -27,6 +27,7 @@ type Content struct {
 	Title     string
 	VideoType string
 	Category  string
+	ShowName  string
 }
 
 // Signal is the classified event semantics (FINAL_PLAN §1.3).
@@ -70,11 +71,38 @@ type Segment struct {
 	Properties map[string]interface{} `json:"properties,omitempty"`
 }
 
-// MinuteDelta is one narrow sweep-line edge.
+// MinuteDelta is one narrow sweep-line edge (session grain).
 type MinuteDelta struct {
 	Minute    time.Time
 	SegmentID uint64
 	Delta     int64
+}
+
+// UserSegment is one merged foreground-active interval per user (session-independent).
+type UserSegment struct {
+	UserSegmentID    uint64
+	UserID           string
+	ContentID        uint64
+	Platform         string
+	Country          string
+	AppVersion       string
+	AudioLanguage    string
+	SubtitleLanguage string
+	PlayerVersion    string
+	VideoType        string
+	Category         string
+	SegmentStart     time.Time
+	SegmentEnd       time.Time // exclusive
+	CloseReason      string    // empty while any contributing session is still open
+	Version          uint64
+	Properties       map[string]interface{} `json:"properties,omitempty"`
+}
+
+// UserMinuteDelta is one sweep-line edge at user grain.
+type UserMinuteDelta struct {
+	Minute          time.Time
+	UserSegmentID   uint64
+	Delta           int64
 }
 
 // WideDelta is one sweep-line edge for the optional denormalized rollup

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Dimension, Engine, Filter, Grain } from "./types";
+import type { Dimension, CountUnit, Filter, Grain } from "./types";
 import { getDimensions, getWindow } from "./api";
 import { FilterSidebar } from "./components/FilterSidebar";
 import { Dashboard } from "./components/Dashboard";
@@ -14,8 +14,8 @@ export default function App() {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [grain, setGrain] = useState<Grain>("minute");
+  const [unit, setUnit] = useState<CountUnit>("session");
   const [breakdownDim, setBreakdownDim] = useState("");
-  const [engine, setEngine] = useState<Engine>("narrow");
   const [bootError, setBootError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,6 +48,27 @@ export default function App() {
           </div>
         </div>
 
+        <div className="field" style={{ marginBottom: 14 }}>
+          <label>Count by</label>
+          <div className="seg">
+            {(
+              [
+                { id: "session" as const, label: "Session" },
+                { id: "user" as const, label: "User" },
+              ] as const
+            ).map(({ id, label }) => (
+              <button key={id} className={unit === id ? "active" : ""} onClick={() => setUnit(id)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="muted" style={{ marginTop: 8, fontSize: 12, lineHeight: 1.4 }}>
+            {unit === "session"
+              ? "Each video session counted separately (multi-device → higher peak)."
+              : "Merged per user — concurrent sessions on one user count once."}
+          </p>
+        </div>
+
         <div className="field">
           <label>Start (UTC)</label>
           <input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
@@ -61,17 +82,6 @@ export default function App() {
         <FilterSidebar dimensions={dimensions} filters={filters} onChange={setFilters} />
 
         <hr />
-        <div className="field" style={{ marginBottom: 14 }}>
-          <label>Serving engine</label>
-          <div className="seg">
-            {(["narrow", "rollup"] as Engine[]).map((e) => (
-              <button key={e} className={engine === e ? "active" : ""} onClick={() => setEngine(e)}>
-                {e}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="field">
           <label>Break down by</label>
           <select value={breakdownDim} onChange={(e) => setBreakdownDim(e.target.value)}>
@@ -98,9 +108,16 @@ export default function App() {
         {bootError && <div className="error">Backend not reachable: {bootError}</div>}
 
         {tab === "dashboard" ? (
-          <Dashboard start={start} end={end} grain={grain} filters={filters} breakdownDim={breakdownDim} engine={engine} />
+          <Dashboard start={start} end={end} grain={grain} unit={unit} filters={filters} breakdownDim={breakdownDim} />
         ) : (
-          <ReplayView start={start} end={end} grain={grain} filters={filters} />
+          <ReplayView
+            start={start}
+            end={end}
+            grain={grain}
+            unit={unit}
+            filters={filters}
+            breakdownDim={breakdownDim}
+          />
         )}
       </main>
     </div>

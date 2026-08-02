@@ -114,6 +114,24 @@ func TestBuildChartQuery_OpenEdgesCorrection(t *testing.T) {
 	assert.GreaterOrEqual(t, countPlatformPreds, 2, "platform predicate should appear in both sel and open_edges")
 }
 
+func TestBuildChartQuery_UserUnit(t *testing.T) {
+	q, err := BuildChartQuery(Request{
+		Start:  time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
+		End:    time.Date(2026, 1, 16, 0, 0, 0, 0, time.UTC),
+		Metric: MetricPeak,
+		Unit:   UnitUser,
+		Filters: []filters.Filter{
+			{Dimension: "platform", Op: "eq", Value: "ANDROID"},
+		},
+	}, "sony_liv", 72, nil)
+	require.NoError(t, err)
+	assert.Contains(t, q.SQL, "user_active_segments")
+	assert.Contains(t, q.SQL, "user_minute_deltas")
+	assert.Contains(t, q.SQL, "user_segment_id IN (SELECT user_segment_id FROM sel)")
+	assert.Contains(t, q.SQL, "GROUP BY user_id")
+	assert.NotContains(t, q.SQL, "sony_liv.minute_deltas")
+}
+
 func TestBuildChartQuery_TimeseriesHour(t *testing.T) {
 	q, err := BuildChartQuery(Request{
 		Start:  time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),

@@ -1,4 +1,4 @@
-import type { BreakdownRow, ChartResult, CurvePoint, Dimension, Engine, Filter, Grain, Window } from "./types";
+import type { BreakdownRow, ChartResult, CountUnit, CurvePoint, Dimension, Filter, Grain, Window } from "./types";
 
 const num = (v: unknown): number | null =>
   v === null || v === undefined ? null : typeof v === "number" ? v : Number(v);
@@ -38,11 +38,11 @@ interface ChartBody {
   end: string;
   grain: Grain;
   metric: "summary" | "timeseries";
+  unit: CountUnit;
   filters: Filter[];
-  engine?: Engine;
 }
 
-async function postChart(body: ChartBody): Promise<{ rows: Record<string, unknown>[]; peak: unknown; avg: unknown; engine?: string }> {
+async function postChart(body: ChartBody): Promise<{ rows: Record<string, unknown>[]; peak: unknown; avg: unknown }> {
   const r = await fetch("/api/v1/concurrency/chart", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -59,11 +59,11 @@ export async function getChart(
   end: string,
   grain: Grain,
   filters: Filter[],
-  engine: Engine = "narrow"
+  unit: CountUnit = "session"
 ): Promise<ChartResult> {
   const [summary, series] = await Promise.all([
-    postChart({ start, end, grain, metric: "summary", filters, engine }),
-    postChart({ start, end, grain, metric: "timeseries", filters, engine }),
+    postChart({ start, end, grain, metric: "summary", unit, filters }),
+    postChart({ start, end, grain, metric: "timeseries", unit, filters }),
   ]);
 
   const points: CurvePoint[] = series.rows.map((row) => {
@@ -77,7 +77,6 @@ export async function getChart(
     points,
     peak: num(summary.peak) ?? (summary.rows[0] ? num(summary.rows[0].peak_concurrency) : null),
     avg: num(summary.avg) ?? (summary.rows[0] ? num(summary.rows[0].avg_concurrency) : null),
-    engine: summary.engine,
   };
 }
 
@@ -87,12 +86,13 @@ export async function getBreakdown(
   end: string,
   grain: Grain,
   dimension: string,
-  filters: Filter[]
+  filters: Filter[],
+  unit: CountUnit = "session"
 ): Promise<BreakdownRow[]> {
   const r = await fetch("/api/v1/concurrency/breakdown", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ start: normalizeDT(start), end: normalizeDT(end), grain, dimension, filters }),
+    body: JSON.stringify({ start: normalizeDT(start), end: normalizeDT(end), grain, dimension, unit, filters }),
   });
   if (!r.ok) throw new Error(`breakdown: ${r.status} ${await r.text()}`);
   const d = (await r.json()) as { rows: BreakdownRow[] };

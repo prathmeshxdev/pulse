@@ -28,6 +28,7 @@ var dictDimensions = map[string]string{
 	"title":      "title",
 	"video_type": "video_type",
 	"category":   "category",
+	"show_name":  "show_name",
 }
 
 // rollupDimensions are the event dims denormalized onto concurrency_minute_serving.

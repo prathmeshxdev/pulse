@@ -12,7 +12,7 @@ Raw playback events are noisy: users background the app, pause, buffer, or leave
 
 **Caching.** Redis serves two roles: **preflight** singleflight plus TTL result cache for identical chart queries, and **live state** for streaming demos (`streamd`) with fixed session TTL and O(1) active counts. Both degrade gracefully when Redis is unavailable.
 
-**Serving.** A Go API compiles normative chart queries (semi-join on `segment_id`, never widening delta rows). A React dashboard and live-replay view consume the API. LibreChat plus the official ClickHouse MCP server provides a conversational layer over read-only serving tables—complementary to the API, not a duplicate compiler.
+**Serving.** A Go API compiles normative chart queries (semi-join on `segment_id` or `user_segment_id`, never widening delta rows). Pass `"unit": "user"` for session-independent (user-level) peak/average; default `"unit": "session"` is session-aware. A React dashboard and live-replay view consume the API. LibreChat plus the official ClickHouse MCP server provides a conversational layer over read-only serving tables—complementary to the API, not a duplicate compiler.
 
 **Observability.** ClickStack (OTLP collector → ClickHouse Cloud `otel_*`) traces API and pipeline work. Optional Langfuse traces LLM generations when LibreChat routes through a local LiteLLM proxy with callbacks.
 
@@ -50,7 +50,7 @@ Each knob is one line in `clickhouse/scripts/config.env`; flipping any requires 
 
 | # | Question | Default until answered |
 |---|----------|------------------------|
-| Q1 | User-level concurrency? | Session-level primary; island-merge SQL ready if benchmarks ask |
+| Q1 | User-level concurrency? | **Shipped** — `user_active_segments` + `user_minute_deltas`; API/bench `unit=user` |
 | Q2 | Hour/day grain definition? | Bucket the same minute curve (peak = max of minutes in bucket) |
 | Q3 | Pre-aggregate rollup? | No until p95 > 200 ms — measure, don't guess |
 | Q4 | Product depth? | ClickStack + minimal chart; LibreChat secondary |

@@ -3,7 +3,8 @@ CREATE DICTIONARY IF NOT EXISTS sony_liv.content_dict
     content_id UInt64,
     title String,
     video_type String,
-    category String
+    category String,
+    show_name String
 )
 PRIMARY KEY content_id
 SOURCE(CLICKHOUSE(

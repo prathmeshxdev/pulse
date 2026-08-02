@@ -33,6 +33,7 @@ type Case struct {
 	End     string           `json:"end,omitempty"`
 	Grain   string           `json:"grain"`
 	Metric  string           `json:"metric"`
+	Unit    string           `json:"unit,omitempty"` // session (default) | user
 	Filters []filters.Filter `json:"filters,omitempty"`
 }
 
@@ -95,6 +96,7 @@ func main() {
 		req := concurrency.Request{
 			Start: start.UTC(), End: end.UTC(),
 			Grain: grainOr(c.Grain), Metric: metricOr(c.Metric), Filters: c.Filters,
+			Unit: concurrency.ParseCountUnit(c.Unit),
 		}
 		q, err := concurrency.BuildChartQuery(req, cfg.Database, cfg.MaxSegmentSpanHours, nil)
 		a := answer{Case: c}
@@ -201,6 +203,7 @@ func loadCases(path string, conn driver.Conn, ctx context.Context, db string) ([
 	}
 	cases := []Case{
 		{Name: "unfiltered_minute", Grain: "minute", Metric: "summary"},
+		{Name: "unfiltered_minute_user", Grain: "minute", Metric: "summary", Unit: "user"},
 		{Name: "unfiltered_hour", Grain: "hour", Metric: "summary"},
 		{Name: "unfiltered_day", Grain: "day", Metric: "summary"},
 	}

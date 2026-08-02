@@ -11,6 +11,11 @@ interface:
   modelSelect: true
   parameters: true
   presets: true
+  agents:
+    use: true
+    create: true
+    share: false
+    public: false
   mcpServers:
     use: true
     share: false
@@ -18,6 +23,12 @@ interface:
     public: false
 
 endpoints:
+  agents:
+    disableBuilder: false
+    capabilities:
+      - tools
+      - actions
+      - context
   custom:
     - name: "LiteLLM"
       apiKey: "sk-pulse-litellm-local"

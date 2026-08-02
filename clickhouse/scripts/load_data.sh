@@ -65,9 +65,9 @@ FORMAT CSVWithNames
 if [[ -n "${CONTENT_CSV}" ]]; then
   echo "Loading content metadata from ${CONTENT_CSV}"
   client --query "
-  INSERT INTO ${DATABASE}.content_metadata (content_id, title, video_type, category)
-  SELECT toUInt64(content_id), title, video_type, category
-  FROM input('content_id String, title String, video_type String, category String')
+  INSERT INTO ${DATABASE}.content_metadata (content_id, title, video_type, category, show_name)
+  SELECT toUInt64(content_id), title, video_type, category, show_name
+  FROM input('content_id String, title String, video_type String, category String, show_name String')
   FORMAT CSVWithNames
   " < "${CONTENT_CSV}"
   client --query "SYSTEM RELOAD DICTIONARY ${DATABASE}.content_dict"

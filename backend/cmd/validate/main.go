@@ -18,9 +18,11 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 
 	"github.com/prathmeshxdev/pulse/internal/chclient"
+	"github.com/prathmeshxdev/pulse/internal/concurrency"
 	"github.com/prathmeshxdev/pulse/internal/config"
 	"github.com/prathmeshxdev/pulse/internal/csvload"
 	"github.com/prathmeshxdev/pulse/internal/deltas"
+	"github.com/prathmeshxdev/pulse/internal/filters"
 	"github.com/prathmeshxdev/pulse/internal/models"
 	"github.com/prathmeshxdev/pulse/internal/segments"
 )
@@ -63,6 +65,20 @@ func main() {
 				failed++
 			}
 			fmt.Printf("  [%s] %-28s %s\n", mark, c.Name, c.Detail)
+		}
+
+		propTypes, _ := chclient.FetchPropertyKeyTypes(ctx, conn, cfg.Database)
+		consistency, err := runConsistency(ctx, conn, cfg, propTypes)
+		must(err, "consistency")
+		writeJSON(filepath.Join(*outDir, "consistency.json"), consistency)
+		fmt.Println("== Chart / breakdown consistency ==")
+		for _, c := range consistency {
+			mark := "PASS"
+			if !c.Pass {
+				mark = "FAIL"
+				failed++
+			}
+			fmt.Printf("  [%s] %-40s %s\n", mark, c.Name, c.Detail)
 		}
 	}
 
@@ -136,6 +152,42 @@ func runInvariants(ctx context.Context, conn driver.Conn, db string) []check {
 	out = append(out, check{"filtered_peak_le_unfiltered", fpeak <= unpeak, fmt.Sprintf("platform=%s peak %.0f <= unfiltered %.0f", top, fpeak, unpeak)})
 
 	return out
+}
+
+func runConsistency(ctx context.Context, conn driver.Conn, cfg config.Constants, propTypes filters.PropertyTypes) ([]check, error) {
+	start, end, err := dataWindow(ctx, conn, cfg.Database)
+	if err != nil {
+		return nil, err
+	}
+	results, err := concurrency.RunConsistencyChecks(ctx, conn, concurrency.VerifyOptions{
+		Database:            cfg.Database,
+		MaxSegmentSpanHours: cfg.MaxSegmentSpanHours,
+		Start:               start,
+		End:                 end,
+		PropTypes:           filters.StringFallbackTypes{PropertyTypes: propTypes},
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]check, len(results))
+	for i, r := range results {
+		out[i] = check{Name: r.Name, Pass: r.Pass, Detail: r.Detail}
+	}
+	return out, nil
+}
+
+func dataWindow(ctx context.Context, conn driver.Conn, db string) (time.Time, time.Time, error) {
+	rows, err := chclient.QueryMaps(ctx, conn, fmt.Sprintf(
+		`SELECT min(minute) AS lo, max(minute) + toIntervalMinute(1) AS hi FROM %s.minute_deltas`, db))
+	if err != nil || len(rows) == 0 {
+		return time.Time{}, time.Time{}, fmt.Errorf("data window: %w", err)
+	}
+	lo, ok1 := rows[0]["lo"].(time.Time)
+	hi, ok2 := rows[0]["hi"].(time.Time)
+	if !ok1 || !ok2 {
+		return time.Time{}, time.Time{}, fmt.Errorf("data window: unexpected types")
+	}
+	return lo, hi, nil
 }
 
 // ---- Layer 4: arithmetic cross-check ----

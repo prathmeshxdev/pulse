@@ -1,22 +1,42 @@
 [
   {
+    "parts": 48,
+    "rows": 158720,
+    "table": "concurrency_minute_serving"
+  },
+  {
     "parts": 1,
-    "rows": 33464,
+    "rows": 33326,
     "table": "content_metadata"
   },
   {
-    "parts": 7,
-    "rows": 64582,
+    "parts": 48,
+    "rows": 296288,
     "table": "minute_deltas"
   },
   {
-    "parts": 7,
-    "rows": 905558,
+    "parts": 1,
+    "rows": 2,
+    "table": "properties_key_mappings"
+  },
+  {
+    "parts": 293,
+    "rows": 7000000,
     "table": "raw_events"
   },
   {
-    "parts": 7,
-    "rows": 32291,
+    "parts": 42,
+    "rows": 148144,
     "table": "session_active_segments"
+  },
+  {
+    "parts": 37,
+    "rows": 143421,
+    "table": "user_active_segments"
+  },
+  {
+    "parts": 43,
+    "rows": 286842,
+    "table": "user_minute_deltas"
   }
 ]

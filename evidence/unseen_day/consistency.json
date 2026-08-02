@@ -1,0 +1,2752 @@
+[
+  {
+    "name": "session_summary_peak_matches_timeseries",
+    "pass": true,
+    "detail": "summary peak 18968.0000 vs max(timeseries) 18968.0000"
+  },
+  {
+    "name": "session_summary_avg_matches_timeseries",
+    "pass": true,
+    "detail": "summary avg 0.5625 vs mean(timeseries) 0.5625"
+  },
+  {
+    "name": "session_breakdown_platform_ANDROID_PHONE_peak",
+    "pass": true,
+    "detail": "filter peak 6084.0000 vs breakdown 6084.0000"
+  },
+  {
+    "name": "session_breakdown_platform_ANDROID_PHONE_avg",
+    "pass": true,
+    "detail": "filter avg 0.1802 vs breakdown 0.1802"
+  },
+  {
+    "name": "session_breakdown_platform_JIO_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "filter peak 4966.0000 vs breakdown 4966.0000"
+  },
+  {
+    "name": "session_breakdown_platform_JIO_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.1429 vs breakdown 0.1429"
+  },
+  {
+    "name": "session_breakdown_platform_SONY_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "filter peak 2656.0000 vs breakdown 2656.0000"
+  },
+  {
+    "name": "session_breakdown_platform_SONY_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0817 vs breakdown 0.0817"
+  },
+  {
+    "name": "session_breakdown_platform_SAMSUNG_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 1009.0000 vs breakdown 1009.0000"
+  },
+  {
+    "name": "session_breakdown_platform_SAMSUNG_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0292 vs breakdown 0.0292"
+  },
+  {
+    "name": "session_breakdown_platform_IPHONE_peak",
+    "pass": true,
+    "detail": "filter peak 709.0000 vs breakdown 709.0000"
+  },
+  {
+    "name": "session_breakdown_platform_IPHONE_avg",
+    "pass": true,
+    "detail": "filter avg 0.0203 vs breakdown 0.0203"
+  },
+  {
+    "name": "session_breakdown_platform_Web_peak",
+    "pass": true,
+    "detail": "filter peak 1214.0000 vs breakdown 1214.0000"
+  },
+  {
+    "name": "session_breakdown_platform_Web_avg",
+    "pass": true,
+    "detail": "filter avg 0.0242 vs breakdown 0.0242"
+  },
+  {
+    "name": "session_breakdown_platform_LG_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 792.0000 vs breakdown 792.0000"
+  },
+  {
+    "name": "session_breakdown_platform_LG_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0233 vs breakdown 0.0233"
+  },
+  {
+    "name": "session_breakdown_platform_FIRE_TV_peak",
+    "pass": true,
+    "detail": "filter peak 649.0000 vs breakdown 649.0000"
+  },
+  {
+    "name": "session_breakdown_platform_FIRE_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0190 vs breakdown 0.0190"
+  },
+  {
+    "name": "session_breakdown_platform_XIAOMI_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "filter peak 553.0000 vs breakdown 553.0000"
+  },
+  {
+    "name": "session_breakdown_platform_XIAOMI_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0170 vs breakdown 0.0170"
+  },
+  {
+    "name": "session_breakdown_platform_SONY_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 259.0000 vs breakdown 259.0000"
+  },
+  {
+    "name": "session_breakdown_platform_SONY_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0044 vs breakdown 0.0044"
+  },
+  {
+    "name": "session_breakdown_platform_IPAD_peak",
+    "pass": true,
+    "detail": "filter peak 173.0000 vs breakdown 173.0000"
+  },
+  {
+    "name": "session_breakdown_platform_IPAD_avg",
+    "pass": true,
+    "detail": "filter avg 0.0046 vs breakdown 0.0046"
+  },
+  {
+    "name": "session_breakdown_platform_VIDAA_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 126.0000 vs breakdown 126.0000"
+  },
+  {
+    "name": "session_breakdown_platform_VIDAA_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0029 vs breakdown 0.0029"
+  },
+  {
+    "name": "session_breakdown_platform_ANDROID_TAB_peak",
+    "pass": true,
+    "detail": "filter peak 209.0000 vs breakdown 209.0000"
+  },
+  {
+    "name": "session_breakdown_platform_ANDROID_TAB_avg",
+    "pass": true,
+    "detail": "filter avg 0.0056 vs breakdown 0.0056"
+  },
+  {
+    "name": "session_breakdown_platform_Mweb_peak",
+    "pass": true,
+    "detail": "filter peak 111.0000 vs breakdown 111.0000"
+  },
+  {
+    "name": "session_breakdown_platform_Mweb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0029 vs breakdown 0.0029"
+  },
+  {
+    "name": "session_breakdown_platform_SKYWORTH_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 111.0000 vs breakdown 111.0000"
+  },
+  {
+    "name": "session_breakdown_platform_SKYWORTH_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0031 vs breakdown 0.0031"
+  },
+  {
+    "name": "session_breakdown_platform_APPLE_TV_peak",
+    "pass": true,
+    "detail": "filter peak 32.0000 vs breakdown 32.0000"
+  },
+  {
+    "name": "session_breakdown_platform_APPLE_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0009 vs breakdown 0.0009"
+  },
+  {
+    "name": "session_breakdown_platform_KEPLER_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 20.0000 vs breakdown 20.0000"
+  },
+  {
+    "name": "session_breakdown_platform_KEPLER_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0001 vs breakdown 0.0001"
+  },
+  {
+    "name": "session_breakdown_platform_NETRANGE_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 4.0000 vs breakdown 4.0000"
+  },
+  {
+    "name": "session_breakdown_platform_NETRANGE_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0000 vs breakdown 0.0000"
+  },
+  {
+    "name": "session_breakdown_platform_WEB_peak",
+    "pass": true,
+    "detail": "filter peak 2.0000 vs breakdown 2.0000"
+  },
+  {
+    "name": "session_breakdown_platform_WEB_avg",
+    "pass": true,
+    "detail": "filter avg 0.0000 vs breakdown 0.0000"
+  },
+  {
+    "name": "session_breakdown_platform_MWEB_peak",
+    "pass": true,
+    "detail": "filter peak 1.0000 vs breakdown 1.0000"
+  },
+  {
+    "name": "session_breakdown_platform_MWEB_avg",
+    "pass": true,
+    "detail": "filter avg 0.0000 vs breakdown 0.0000"
+  },
+  {
+    "name": "session_breakdown_platform_ROKU_TV_peak",
+    "pass": true,
+    "detail": "filter peak 2.0000 vs breakdown 2.0000"
+  },
+  {
+    "name": "session_breakdown_platform_ROKU_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0000 vs breakdown 0.0000"
+  },
+  {
+    "name": "session_breakdown_country_india_peak",
+    "pass": true,
+    "detail": "filter peak 18968.0000 vs breakdown 18968.0000"
+  },
+  {
+    "name": "session_breakdown_country_india_avg",
+    "pass": true,
+    "detail": "filter avg 0.5625 vs breakdown 0.5625"
+  },
+  {
+    "name": "session_breakdown_show_name_ggdkb_peak",
+    "pass": true,
+    "detail": "filter peak 6515.0000 vs breakdown 6515.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_ggdkb_avg",
+    "pass": true,
+    "detail": "filter avg 0.1552 vs breakdown 0.1552"
+  },
+  {
+    "name": "session_breakdown_show_name_hfgdb_peak",
+    "pass": true,
+    "detail": "filter peak 354.0000 vs breakdown 354.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_hfgdb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0113 vs breakdown 0.0113"
+  },
+  {
+    "name": "session_breakdown_show_name_djbdb_peak",
+    "pass": true,
+    "detail": "filter peak 389.0000 vs breakdown 389.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_djbdb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0122 vs breakdown 0.0122"
+  },
+  {
+    "name": "session_breakdown_show_name_bjdjb_peak",
+    "pass": true,
+    "detail": "filter peak 421.0000 vs breakdown 421.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_bjdjb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0111 vs breakdown 0.0111"
+  },
+  {
+    "name": "session_breakdown_show_name_gdckb_peak",
+    "pass": true,
+    "detail": "filter peak 646.0000 vs breakdown 646.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_gdckb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0108 vs breakdown 0.0108"
+  },
+  {
+    "name": "session_breakdown_show_name_ckfcb_peak",
+    "pass": true,
+    "detail": "filter peak 227.0000 vs breakdown 227.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_ckfcb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0073 vs breakdown 0.0073"
+  },
+  {
+    "name": "session_breakdown_show_name_fhdbb_peak",
+    "pass": true,
+    "detail": "filter peak 338.0000 vs breakdown 338.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_fhdbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0064 vs breakdown 0.0064"
+  },
+  {
+    "name": "session_breakdown_show_name_hhfhb_peak",
+    "pass": true,
+    "detail": "filter peak 286.0000 vs breakdown 286.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_hhfhb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0090 vs breakdown 0.0090"
+  },
+  {
+    "name": "session_breakdown_show_name_dgfdb_peak",
+    "pass": true,
+    "detail": "filter peak 312.0000 vs breakdown 312.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_dgfdb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0085 vs breakdown 0.0085"
+  },
+  {
+    "name": "session_breakdown_show_name_ddglb_peak",
+    "pass": true,
+    "detail": "filter peak 157.0000 vs breakdown 157.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_ddglb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0026 vs breakdown 0.0026"
+  },
+  {
+    "name": "session_breakdown_show_name_djgdb_peak",
+    "pass": true,
+    "detail": "filter peak 293.0000 vs breakdown 293.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_djgdb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0054 vs breakdown 0.0054"
+  },
+  {
+    "name": "session_breakdown_show_name_bbbbb_peak",
+    "pass": true,
+    "detail": "filter peak 192.0000 vs breakdown 192.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_bbbbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0056 vs breakdown 0.0056"
+  },
+  {
+    "name": "session_breakdown_show_name_gjfcb_peak",
+    "pass": true,
+    "detail": "filter peak 166.0000 vs breakdown 166.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_gjfcb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0048 vs breakdown 0.0048"
+  },
+  {
+    "name": "session_breakdown_show_name_gjdcb_peak",
+    "pass": true,
+    "detail": "filter peak 361.0000 vs breakdown 361.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_gjdcb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0054 vs breakdown 0.0054"
+  },
+  {
+    "name": "session_breakdown_show_name_hfbhb_peak",
+    "pass": true,
+    "detail": "filter peak 195.0000 vs breakdown 195.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_hfbhb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0057 vs breakdown 0.0057"
+  },
+  {
+    "name": "session_breakdown_show_name_ckgcb_peak",
+    "pass": true,
+    "detail": "filter peak 197.0000 vs breakdown 197.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_ckgcb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0064 vs breakdown 0.0064"
+  },
+  {
+    "name": "session_breakdown_show_name_ckfgb_peak",
+    "pass": true,
+    "detail": "filter peak 103.0000 vs breakdown 103.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_ckfgb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0020 vs breakdown 0.0020"
+  },
+  {
+    "name": "session_breakdown_show_name_fcfbb_peak",
+    "pass": true,
+    "detail": "filter peak 193.0000 vs breakdown 193.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_fcfbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0052 vs breakdown 0.0052"
+  },
+  {
+    "name": "session_breakdown_show_name_hfcdb_peak",
+    "pass": true,
+    "detail": "filter peak 81.0000 vs breakdown 81.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_hfcdb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0015 vs breakdown 0.0015"
+  },
+  {
+    "name": "session_breakdown_show_name_ccfgb_peak",
+    "pass": true,
+    "detail": "filter peak 161.0000 vs breakdown 161.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_ccfgb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0047 vs breakdown 0.0047"
+  },
+  {
+    "name": "session_breakdown_show_name_ccckb_peak",
+    "pass": true,
+    "detail": "filter peak 127.0000 vs breakdown 127.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_ccckb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0042 vs breakdown 0.0042"
+  },
+  {
+    "name": "session_breakdown_show_name_ggckb_peak",
+    "pass": true,
+    "detail": "filter peak 105.0000 vs breakdown 105.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_ggckb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0028 vs breakdown 0.0028"
+  },
+  {
+    "name": "session_breakdown_show_name_fhgjb_peak",
+    "pass": true,
+    "detail": "filter peak 113.0000 vs breakdown 113.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_fhgjb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0029 vs breakdown 0.0029"
+  },
+  {
+    "name": "session_breakdown_show_name_bggfb_peak",
+    "pass": true,
+    "detail": "filter peak 50.0000 vs breakdown 50.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_bggfb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0015 vs breakdown 0.0015"
+  },
+  {
+    "name": "session_breakdown_show_name_bgfjb_peak",
+    "pass": true,
+    "detail": "filter peak 168.0000 vs breakdown 168.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_bgfjb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0025 vs breakdown 0.0025"
+  },
+  {
+    "name": "session_breakdown_show_name_gbccb_peak",
+    "pass": true,
+    "detail": "filter peak 86.0000 vs breakdown 86.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_gbccb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0025 vs breakdown 0.0025"
+  },
+  {
+    "name": "session_breakdown_show_name_ggfkb_peak",
+    "pass": true,
+    "detail": "filter peak 134.0000 vs breakdown 134.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_ggfkb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0014 vs breakdown 0.0014"
+  },
+  {
+    "name": "session_breakdown_show_name_bjbfb_peak",
+    "pass": true,
+    "detail": "filter peak 62.0000 vs breakdown 62.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_bjbfb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0015 vs breakdown 0.0015"
+  },
+  {
+    "name": "session_breakdown_show_name_hfdlb_peak",
+    "pass": true,
+    "detail": "filter peak 47.0000 vs breakdown 47.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_hfdlb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0011 vs breakdown 0.0011"
+  },
+  {
+    "name": "session_breakdown_show_name_bdgfb_peak",
+    "pass": true,
+    "detail": "filter peak 78.0000 vs breakdown 78.0000"
+  },
+  {
+    "name": "session_breakdown_show_name_bdgfb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0024 vs breakdown 0.0024"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-1280*720_peak",
+    "pass": true,
+    "detail": "filter peak 2387.0000 vs breakdown 2387.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-1280*720_avg",
+    "pass": true,
+    "detail": "filter avg 0.0685 vs breakdown 0.0685"
+  },
+  {
+    "name": "session_breakdown_video_resolution_NA_peak",
+    "pass": true,
+    "detail": "filter peak 2348.0000 vs breakdown 2348.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_NA_avg",
+    "pass": true,
+    "detail": "filter avg 0.0677 vs breakdown 0.0677"
+  },
+  {
+    "name": "session_breakdown_video_resolution_1920_*_1080_peak",
+    "pass": true,
+    "detail": "filter peak 2794.0000 vs breakdown 2794.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_1920_*_1080_avg",
+    "pass": true,
+    "detail": "filter avg 0.0809 vs breakdown 0.0809"
+  },
+  {
+    "name": "session_breakdown_video_resolution_1080*1920_peak",
+    "pass": true,
+    "detail": "filter peak 1785.0000 vs breakdown 1785.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_1080*1920_avg",
+    "pass": true,
+    "detail": "filter avg 0.0523 vs breakdown 0.0523"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-Auto_peak",
+    "pass": true,
+    "detail": "filter peak 1594.0000 vs breakdown 1594.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-Auto_avg",
+    "pass": true,
+    "detail": "filter avg 0.0397 vs breakdown 0.0397"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-1920*1080_peak",
+    "pass": true,
+    "detail": "filter peak 1060.0000 vs breakdown 1060.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-1920*1080_avg",
+    "pass": true,
+    "detail": "filter avg 0.0324 vs breakdown 0.0324"
+  },
+  {
+    "name": "session_breakdown_video_resolution_1280_*_720_peak",
+    "pass": true,
+    "detail": "filter peak 1299.0000 vs breakdown 1299.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_1280_*_720_avg",
+    "pass": true,
+    "detail": "filter avg 0.0389 vs breakdown 0.0389"
+  },
+  {
+    "name": "session_breakdown_video_resolution_1920*1080_peak",
+    "pass": true,
+    "detail": "filter peak 967.0000 vs breakdown 967.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_1920*1080_avg",
+    "pass": true,
+    "detail": "filter avg 0.0293 vs breakdown 0.0293"
+  },
+  {
+    "name": "session_breakdown_video_resolution_720*1280_peak",
+    "pass": true,
+    "detail": "filter peak 449.0000 vs breakdown 449.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_720*1280_avg",
+    "pass": true,
+    "detail": "filter avg 0.0129 vs breakdown 0.0129"
+  },
+  {
+    "name": "session_breakdown_video_resolution_1280*720_peak",
+    "pass": true,
+    "detail": "filter peak 490.0000 vs breakdown 490.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_1280*720_avg",
+    "pass": true,
+    "detail": "filter avg 0.0144 vs breakdown 0.0144"
+  },
+  {
+    "name": "session_breakdown_video_resolution_960_*_540_peak",
+    "pass": true,
+    "detail": "filter peak 856.0000 vs breakdown 856.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_960_*_540_avg",
+    "pass": true,
+    "detail": "filter avg 0.0216 vs breakdown 0.0216"
+  },
+  {
+    "name": "session_breakdown_video_resolution_960*540_peak",
+    "pass": true,
+    "detail": "filter peak 460.0000 vs breakdown 460.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_960*540_avg",
+    "pass": true,
+    "detail": "filter avg 0.0121 vs breakdown 0.0121"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-960*540_peak",
+    "pass": true,
+    "detail": "filter peak 305.0000 vs breakdown 305.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-960*540_avg",
+    "pass": true,
+    "detail": "filter avg 0.0060 vs breakdown 0.0060"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-640*360_peak",
+    "pass": true,
+    "detail": "filter peak 173.0000 vs breakdown 173.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-640*360_avg",
+    "pass": true,
+    "detail": "filter avg 0.0054 vs breakdown 0.0054"
+  },
+  {
+    "name": "session_breakdown_video_resolution_640_*_360_peak",
+    "pass": true,
+    "detail": "filter peak 241.0000 vs breakdown 241.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_640_*_360_avg",
+    "pass": true,
+    "detail": "filter avg 0.0061 vs breakdown 0.0061"
+  },
+  {
+    "name": "session_breakdown_video_resolution_0-1280*720_peak",
+    "pass": true,
+    "detail": "filter peak 91.0000 vs breakdown 91.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_0-1280*720_avg",
+    "pass": true,
+    "detail": "filter avg 0.0028 vs breakdown 0.0028"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-854*480_peak",
+    "pass": true,
+    "detail": "filter peak 119.0000 vs breakdown 119.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-854*480_avg",
+    "pass": true,
+    "detail": "filter avg 0.0033 vs breakdown 0.0033"
+  },
+  {
+    "name": "session_breakdown_video_resolution_DataSaver-640*360_peak",
+    "pass": true,
+    "detail": "filter peak 101.0000 vs breakdown 101.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_DataSaver-640*360_avg",
+    "pass": true,
+    "detail": "filter avg 0.0031 vs breakdown 0.0031"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-1_peak",
+    "pass": true,
+    "detail": "filter peak 98.0000 vs breakdown 98.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-1_avg",
+    "pass": true,
+    "detail": "filter avg 0.0024 vs breakdown 0.0024"
+  },
+  {
+    "name": "session_breakdown_video_resolution_0-1920*1080_peak",
+    "pass": true,
+    "detail": "filter peak 91.0000 vs breakdown 91.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_0-1920*1080_avg",
+    "pass": true,
+    "detail": "filter avg 0.0027 vs breakdown 0.0027"
+  },
+  {
+    "name": "session_breakdown_video_resolution_NA-1280*720_peak",
+    "pass": true,
+    "detail": "filter peak 26.0000 vs breakdown 26.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_NA-1280*720_avg",
+    "pass": true,
+    "detail": "filter avg 0.0033 vs breakdown 0.0033"
+  },
+  {
+    "name": "session_breakdown_video_resolution_864*1536_peak",
+    "pass": true,
+    "detail": "filter peak 89.0000 vs breakdown 89.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_864*1536_avg",
+    "pass": true,
+    "detail": "filter avg 0.0021 vs breakdown 0.0021"
+  },
+  {
+    "name": "session_breakdown_video_resolution_640*360_peak",
+    "pass": true,
+    "detail": "filter peak 89.0000 vs breakdown 89.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_640*360_avg",
+    "pass": true,
+    "detail": "filter avg 0.0026 vs breakdown 0.0026"
+  },
+  {
+    "name": "session_breakdown_video_resolution_3840*2160_peak",
+    "pass": true,
+    "detail": "filter peak 112.0000 vs breakdown 112.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_3840*2160_avg",
+    "pass": true,
+    "detail": "filter avg 0.0030 vs breakdown 0.0030"
+  },
+  {
+    "name": "session_breakdown_video_resolution_3840_*_2160_peak",
+    "pass": true,
+    "detail": "filter peak 96.0000 vs breakdown 96.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_3840_*_2160_avg",
+    "pass": true,
+    "detail": "filter avg 0.0026 vs breakdown 0.0026"
+  },
+  {
+    "name": "session_breakdown_video_resolution_854_*_480_peak",
+    "pass": true,
+    "detail": "filter peak 88.0000 vs breakdown 88.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_854_*_480_avg",
+    "pass": true,
+    "detail": "filter avg 0.0024 vs breakdown 0.0024"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-256*144_peak",
+    "pass": true,
+    "detail": "filter peak 55.0000 vs breakdown 55.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-256*144_avg",
+    "pass": true,
+    "detail": "filter avg 0.0011 vs breakdown 0.0011"
+  },
+  {
+    "name": "session_breakdown_video_resolution_NA-640*360_peak",
+    "pass": true,
+    "detail": "filter peak 21.0000 vs breakdown 21.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_NA-640*360_avg",
+    "pass": true,
+    "detail": "filter avg 0.0022 vs breakdown 0.0022"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-426*240_peak",
+    "pass": true,
+    "detail": "filter peak 51.0000 vs breakdown 51.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_Auto-426*240_avg",
+    "pass": true,
+    "detail": "filter avg 0.0013 vs breakdown 0.0013"
+  },
+  {
+    "name": "session_breakdown_video_resolution_768*1366_peak",
+    "pass": true,
+    "detail": "filter peak 46.0000 vs breakdown 46.0000"
+  },
+  {
+    "name": "session_breakdown_video_resolution_768*1366_avg",
+    "pass": true,
+    "detail": "filter avg 0.0012 vs breakdown 0.0012"
+  },
+  {
+    "name": "session_breakdown_video_type_vod_peak",
+    "pass": true,
+    "detail": "filter peak 11159.0000 vs breakdown 11159.0000"
+  },
+  {
+    "name": "session_breakdown_video_type_vod_avg",
+    "pass": true,
+    "detail": "filter avg 0.3652 vs breakdown 0.3652"
+  },
+  {
+    "name": "session_breakdown_video_type_live_peak",
+    "pass": true,
+    "detail": "filter peak 7759.0000 vs breakdown 7759.0000"
+  },
+  {
+    "name": "session_breakdown_video_type_live_avg",
+    "pass": true,
+    "detail": "filter avg 0.1835 vs breakdown 0.1835"
+  },
+  {
+    "name": "session_breakdown_category_cdbgg_peak",
+    "pass": true,
+    "detail": "filter peak 6656.0000 vs breakdown 6656.0000"
+  },
+  {
+    "name": "session_breakdown_category_cdbgg_avg",
+    "pass": true,
+    "detail": "filter avg 0.1590 vs breakdown 0.1590"
+  },
+  {
+    "name": "session_breakdown_category_ddddd_peak",
+    "pass": true,
+    "detail": "filter peak 582.0000 vs breakdown 582.0000"
+  },
+  {
+    "name": "session_breakdown_category_ddddd_avg",
+    "pass": true,
+    "detail": "filter avg 0.0167 vs breakdown 0.0167"
+  },
+  {
+    "name": "session_breakdown_category_dhfhp_peak",
+    "pass": true,
+    "detail": "filter peak 407.0000 vs breakdown 407.0000"
+  },
+  {
+    "name": "session_breakdown_category_dhfhp_avg",
+    "pass": true,
+    "detail": "filter avg 0.0132 vs breakdown 0.0132"
+  },
+  {
+    "name": "session_breakdown_category_bhcfm_peak",
+    "pass": true,
+    "detail": "filter peak 549.0000 vs breakdown 549.0000"
+  },
+  {
+    "name": "session_breakdown_category_bhcfm_avg",
+    "pass": true,
+    "detail": "filter avg 0.0138 vs breakdown 0.0138"
+  },
+  {
+    "name": "session_breakdown_category_cffck_peak",
+    "pass": true,
+    "detail": "filter peak 341.0000 vs breakdown 341.0000"
+  },
+  {
+    "name": "session_breakdown_category_cffck_avg",
+    "pass": true,
+    "detail": "filter avg 0.0106 vs breakdown 0.0106"
+  },
+  {
+    "name": "session_breakdown_category_cgdgn_peak",
+    "pass": true,
+    "detail": "filter peak 742.0000 vs breakdown 742.0000"
+  },
+  {
+    "name": "session_breakdown_category_cgdgn_avg",
+    "pass": true,
+    "detail": "filter avg 0.0136 vs breakdown 0.0136"
+  },
+  {
+    "name": "session_breakdown_category_cfdgn_peak",
+    "pass": true,
+    "detail": "filter peak 503.0000 vs breakdown 503.0000"
+  },
+  {
+    "name": "session_breakdown_category_cfdgn_avg",
+    "pass": true,
+    "detail": "filter avg 0.0107 vs breakdown 0.0107"
+  },
+  {
+    "name": "session_breakdown_category_bhdbj_peak",
+    "pass": true,
+    "detail": "filter peak 460.0000 vs breakdown 460.0000"
+  },
+  {
+    "name": "session_breakdown_category_bhdbj_avg",
+    "pass": true,
+    "detail": "filter avg 0.0126 vs breakdown 0.0126"
+  },
+  {
+    "name": "session_breakdown_category_dgbdl_peak",
+    "pass": true,
+    "detail": "filter peak 377.0000 vs breakdown 377.0000"
+  },
+  {
+    "name": "session_breakdown_category_dgbdl_avg",
+    "pass": true,
+    "detail": "filter avg 0.0103 vs breakdown 0.0103"
+  },
+  {
+    "name": "session_breakdown_category_cjfck_peak",
+    "pass": true,
+    "detail": "filter peak 305.0000 vs breakdown 305.0000"
+  },
+  {
+    "name": "session_breakdown_category_cjfck_avg",
+    "pass": true,
+    "detail": "filter avg 0.0099 vs breakdown 0.0099"
+  },
+  {
+    "name": "session_breakdown_category_bcbbb_peak",
+    "pass": true,
+    "detail": "filter peak 234.0000 vs breakdown 234.0000"
+  },
+  {
+    "name": "session_breakdown_category_bcbbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0075 vs breakdown 0.0075"
+  },
+  {
+    "name": "session_breakdown_category_dgchh_peak",
+    "pass": true,
+    "detail": "filter peak 309.0000 vs breakdown 309.0000"
+  },
+  {
+    "name": "session_breakdown_category_dgchh_avg",
+    "pass": true,
+    "detail": "filter avg 0.0094 vs breakdown 0.0094"
+  },
+  {
+    "name": "session_breakdown_category_dfddd_peak",
+    "pass": true,
+    "detail": "filter peak 230.0000 vs breakdown 230.0000"
+  },
+  {
+    "name": "session_breakdown_category_dfddd_avg",
+    "pass": true,
+    "detail": "filter avg 0.0061 vs breakdown 0.0061"
+  },
+  {
+    "name": "session_breakdown_category_cjbgg_peak",
+    "pass": true,
+    "detail": "filter peak 216.0000 vs breakdown 216.0000"
+  },
+  {
+    "name": "session_breakdown_category_cjbgg_avg",
+    "pass": true,
+    "detail": "filter avg 0.0066 vs breakdown 0.0066"
+  },
+  {
+    "name": "session_breakdown_category_ddfhp_peak",
+    "pass": true,
+    "detail": "filter peak 260.0000 vs breakdown 260.0000"
+  },
+  {
+    "name": "session_breakdown_category_ddfhp_avg",
+    "pass": true,
+    "detail": "filter avg 0.0080 vs breakdown 0.0080"
+  },
+  {
+    "name": "session_breakdown_category_cfbgg_peak",
+    "pass": true,
+    "detail": "filter peak 253.0000 vs breakdown 253.0000"
+  },
+  {
+    "name": "session_breakdown_category_cfbgg_avg",
+    "pass": true,
+    "detail": "filter avg 0.0056 vs breakdown 0.0056"
+  },
+  {
+    "name": "session_breakdown_category_ccccc_peak",
+    "pass": true,
+    "detail": "filter peak 308.0000 vs breakdown 308.0000"
+  },
+  {
+    "name": "session_breakdown_category_ccccc_avg",
+    "pass": true,
+    "detail": "filter avg 0.0062 vs breakdown 0.0062"
+  },
+  {
+    "name": "session_breakdown_category_djfhp_peak",
+    "pass": true,
+    "detail": "filter peak 160.0000 vs breakdown 160.0000"
+  },
+  {
+    "name": "session_breakdown_category_djfhp_avg",
+    "pass": true,
+    "detail": "filter avg 0.0041 vs breakdown 0.0041"
+  },
+  {
+    "name": "session_breakdown_category_bjcfm_peak",
+    "pass": true,
+    "detail": "filter peak 197.0000 vs breakdown 197.0000"
+  },
+  {
+    "name": "session_breakdown_category_bjcfm_avg",
+    "pass": true,
+    "detail": "filter avg 0.0057 vs breakdown 0.0057"
+  },
+  {
+    "name": "session_breakdown_category_bbdbj_peak",
+    "pass": true,
+    "detail": "filter peak 163.0000 vs breakdown 163.0000"
+  },
+  {
+    "name": "session_breakdown_category_bbdbj_avg",
+    "pass": true,
+    "detail": "filter avg 0.0043 vs breakdown 0.0043"
+  },
+  {
+    "name": "session_breakdown_category_bcfff_peak",
+    "pass": true,
+    "detail": "filter peak 188.0000 vs breakdown 188.0000"
+  },
+  {
+    "name": "session_breakdown_category_bcfff_avg",
+    "pass": true,
+    "detail": "filter avg 0.0059 vs breakdown 0.0059"
+  },
+  {
+    "name": "session_breakdown_category_djbdl_peak",
+    "pass": true,
+    "detail": "filter peak 233.0000 vs breakdown 233.0000"
+  },
+  {
+    "name": "session_breakdown_category_djbdl_avg",
+    "pass": true,
+    "detail": "filter avg 0.0053 vs breakdown 0.0053"
+  },
+  {
+    "name": "session_breakdown_category_djchh_peak",
+    "pass": true,
+    "detail": "filter peak 195.0000 vs breakdown 195.0000"
+  },
+  {
+    "name": "session_breakdown_category_djchh_avg",
+    "pass": true,
+    "detail": "filter avg 0.0056 vs breakdown 0.0056"
+  },
+  {
+    "name": "session_breakdown_category_bgcfm_peak",
+    "pass": true,
+    "detail": "filter peak 201.0000 vs breakdown 201.0000"
+  },
+  {
+    "name": "session_breakdown_category_bgcfm_avg",
+    "pass": true,
+    "detail": "filter avg 0.0058 vs breakdown 0.0058"
+  },
+  {
+    "name": "session_breakdown_category_bgbbb_peak",
+    "pass": true,
+    "detail": "filter peak 129.0000 vs breakdown 129.0000"
+  },
+  {
+    "name": "session_breakdown_category_bgbbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0035 vs breakdown 0.0035"
+  },
+  {
+    "name": "session_breakdown_category_dcfhp_peak",
+    "pass": true,
+    "detail": "filter peak 131.0000 vs breakdown 131.0000"
+  },
+  {
+    "name": "session_breakdown_category_dcfhp_avg",
+    "pass": true,
+    "detail": "filter avg 0.0036 vs breakdown 0.0036"
+  },
+  {
+    "name": "session_breakdown_category_cbccc_peak",
+    "pass": true,
+    "detail": "filter peak 175.0000 vs breakdown 175.0000"
+  },
+  {
+    "name": "session_breakdown_category_cbccc_avg",
+    "pass": true,
+    "detail": "filter avg 0.0054 vs breakdown 0.0054"
+  },
+  {
+    "name": "session_breakdown_category_dhddd_peak",
+    "pass": true,
+    "detail": "filter peak 172.0000 vs breakdown 172.0000"
+  },
+  {
+    "name": "session_breakdown_category_dhddd_avg",
+    "pass": true,
+    "detail": "filter avg 0.0052 vs breakdown 0.0052"
+  },
+  {
+    "name": "session_breakdown_category_dcchh_peak",
+    "pass": true,
+    "detail": "filter peak 171.0000 vs breakdown 171.0000"
+  },
+  {
+    "name": "session_breakdown_category_dcchh_avg",
+    "pass": true,
+    "detail": "filter avg 0.0048 vs breakdown 0.0048"
+  },
+  {
+    "name": "session_breakdown_category_bjbbb_peak",
+    "pass": true,
+    "detail": "filter peak 230.0000 vs breakdown 230.0000"
+  },
+  {
+    "name": "session_breakdown_category_bjbbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0043 vs breakdown 0.0043"
+  },
+  {
+    "name": "session_partition_sum_platform",
+    "pass": true,
+    "detail": "0/1688027 minutes mismatch (worst delta 0.0000) — sum of platform slices vs unfiltered"
+  },
+  {
+    "name": "session_partition_sum_country",
+    "pass": true,
+    "detail": "0/1688027 minutes mismatch (worst delta 0.0000) — sum of country slices vs unfiltered"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_ANDROID_PHONE",
+    "pass": true,
+    "detail": "filtered peak 6084.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_JIO_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 4966.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_SONY_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 2656.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_SAMSUNG_HTML_TV",
+    "pass": true,
+    "detail": "filtered peak 1009.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_IPHONE",
+    "pass": true,
+    "detail": "filtered peak 709.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_Web",
+    "pass": true,
+    "detail": "filtered peak 1214.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_LG_HTML_TV",
+    "pass": true,
+    "detail": "filtered peak 792.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_FIRE_TV",
+    "pass": true,
+    "detail": "filtered peak 649.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_XIAOMI_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 553.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_SONY_HTML_TV",
+    "pass": true,
+    "detail": "filtered peak 259.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_country_india",
+    "pass": true,
+    "detail": "filtered peak 18968.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_show_name_ggdkb",
+    "pass": true,
+    "detail": "filtered peak 6515.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_show_name_hfgdb",
+    "pass": true,
+    "detail": "filtered peak 354.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_show_name_djbdb",
+    "pass": true,
+    "detail": "filtered peak 389.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_show_name_bjdjb",
+    "pass": true,
+    "detail": "filtered peak 421.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_show_name_gdckb",
+    "pass": true,
+    "detail": "filtered peak 646.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_show_name_ckfcb",
+    "pass": true,
+    "detail": "filtered peak 227.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_show_name_fhdbb",
+    "pass": true,
+    "detail": "filtered peak 338.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_show_name_hhfhb",
+    "pass": true,
+    "detail": "filtered peak 286.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_show_name_dgfdb",
+    "pass": true,
+    "detail": "filtered peak 312.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_show_name_ddglb",
+    "pass": true,
+    "detail": "filtered peak 157.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_resolution_Auto-1280*720",
+    "pass": true,
+    "detail": "filtered peak 2387.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_resolution_NA",
+    "pass": true,
+    "detail": "filtered peak 2348.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_resolution_1920_*_1080",
+    "pass": true,
+    "detail": "filtered peak 2794.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_resolution_1080*1920",
+    "pass": true,
+    "detail": "filtered peak 1785.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_resolution_Auto-Auto",
+    "pass": true,
+    "detail": "filtered peak 1594.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_resolution_Auto-1920*1080",
+    "pass": true,
+    "detail": "filtered peak 1060.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_resolution_1280_*_720",
+    "pass": true,
+    "detail": "filtered peak 1299.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_resolution_1920*1080",
+    "pass": true,
+    "detail": "filtered peak 967.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_resolution_720*1280",
+    "pass": true,
+    "detail": "filtered peak 449.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_resolution_1280*720",
+    "pass": true,
+    "detail": "filtered peak 490.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_type_vod",
+    "pass": true,
+    "detail": "filtered peak 11159.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_video_type_live",
+    "pass": true,
+    "detail": "filtered peak 7759.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_category_cdbgg",
+    "pass": true,
+    "detail": "filtered peak 6656.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_category_ddddd",
+    "pass": true,
+    "detail": "filtered peak 582.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_category_dhfhp",
+    "pass": true,
+    "detail": "filtered peak 407.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_category_bhcfm",
+    "pass": true,
+    "detail": "filtered peak 549.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_category_cffck",
+    "pass": true,
+    "detail": "filtered peak 341.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_category_cgdgn",
+    "pass": true,
+    "detail": "filtered peak 742.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_category_cfdgn",
+    "pass": true,
+    "detail": "filtered peak 503.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_category_bhdbj",
+    "pass": true,
+    "detail": "filtered peak 460.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_category_dgbdl",
+    "pass": true,
+    "detail": "filtered peak 377.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_category_cjfck",
+    "pass": true,
+    "detail": "filtered peak 305.0000 \u003c= unfiltered 18968.0000"
+  },
+  {
+    "name": "user_summary_peak_matches_timeseries",
+    "pass": true,
+    "detail": "summary peak 18418.0000 vs max(timeseries) 18418.0000"
+  },
+  {
+    "name": "user_summary_avg_matches_timeseries",
+    "pass": true,
+    "detail": "summary avg 0.5434 vs mean(timeseries) 0.5434"
+  },
+  {
+    "name": "user_breakdown_platform_ANDROID_PHONE_peak",
+    "pass": true,
+    "detail": "filter peak 6077.0000 vs breakdown 6077.0000"
+  },
+  {
+    "name": "user_breakdown_platform_ANDROID_PHONE_avg",
+    "pass": true,
+    "detail": "filter avg 0.1799 vs breakdown 0.1799"
+  },
+  {
+    "name": "user_breakdown_platform_JIO_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "filter peak 4938.0000 vs breakdown 4938.0000"
+  },
+  {
+    "name": "user_breakdown_platform_JIO_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.1419 vs breakdown 0.1419"
+  },
+  {
+    "name": "user_breakdown_platform_SONY_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "filter peak 2266.0000 vs breakdown 2266.0000"
+  },
+  {
+    "name": "user_breakdown_platform_SONY_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0691 vs breakdown 0.0691"
+  },
+  {
+    "name": "user_breakdown_platform_SAMSUNG_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 1004.0000 vs breakdown 1004.0000"
+  },
+  {
+    "name": "user_breakdown_platform_SAMSUNG_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0292 vs breakdown 0.0292"
+  },
+  {
+    "name": "user_breakdown_platform_IPHONE_peak",
+    "pass": true,
+    "detail": "filter peak 709.0000 vs breakdown 709.0000"
+  },
+  {
+    "name": "user_breakdown_platform_IPHONE_avg",
+    "pass": true,
+    "detail": "filter avg 0.0203 vs breakdown 0.0203"
+  },
+  {
+    "name": "user_breakdown_platform_Web_peak",
+    "pass": true,
+    "detail": "filter peak 1211.0000 vs breakdown 1211.0000"
+  },
+  {
+    "name": "user_breakdown_platform_Web_avg",
+    "pass": true,
+    "detail": "filter avg 0.0242 vs breakdown 0.0242"
+  },
+  {
+    "name": "user_breakdown_platform_LG_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 788.0000 vs breakdown 788.0000"
+  },
+  {
+    "name": "user_breakdown_platform_LG_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0230 vs breakdown 0.0230"
+  },
+  {
+    "name": "user_breakdown_platform_FIRE_TV_peak",
+    "pass": true,
+    "detail": "filter peak 597.0000 vs breakdown 597.0000"
+  },
+  {
+    "name": "user_breakdown_platform_FIRE_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0168 vs breakdown 0.0168"
+  },
+  {
+    "name": "user_breakdown_platform_XIAOMI_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "filter peak 484.0000 vs breakdown 484.0000"
+  },
+  {
+    "name": "user_breakdown_platform_XIAOMI_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0144 vs breakdown 0.0144"
+  },
+  {
+    "name": "user_breakdown_platform_SONY_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 259.0000 vs breakdown 259.0000"
+  },
+  {
+    "name": "user_breakdown_platform_SONY_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0044 vs breakdown 0.0044"
+  },
+  {
+    "name": "user_breakdown_platform_IPAD_peak",
+    "pass": true,
+    "detail": "filter peak 173.0000 vs breakdown 173.0000"
+  },
+  {
+    "name": "user_breakdown_platform_IPAD_avg",
+    "pass": true,
+    "detail": "filter avg 0.0046 vs breakdown 0.0046"
+  },
+  {
+    "name": "user_breakdown_platform_VIDAA_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 126.0000 vs breakdown 126.0000"
+  },
+  {
+    "name": "user_breakdown_platform_VIDAA_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0029 vs breakdown 0.0029"
+  },
+  {
+    "name": "user_breakdown_platform_ANDROID_TAB_peak",
+    "pass": true,
+    "detail": "filter peak 208.0000 vs breakdown 208.0000"
+  },
+  {
+    "name": "user_breakdown_platform_ANDROID_TAB_avg",
+    "pass": true,
+    "detail": "filter avg 0.0056 vs breakdown 0.0056"
+  },
+  {
+    "name": "user_breakdown_platform_Mweb_peak",
+    "pass": true,
+    "detail": "filter peak 111.0000 vs breakdown 111.0000"
+  },
+  {
+    "name": "user_breakdown_platform_Mweb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0029 vs breakdown 0.0029"
+  },
+  {
+    "name": "user_breakdown_platform_SKYWORTH_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 111.0000 vs breakdown 111.0000"
+  },
+  {
+    "name": "user_breakdown_platform_SKYWORTH_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0031 vs breakdown 0.0031"
+  },
+  {
+    "name": "user_breakdown_platform_APPLE_TV_peak",
+    "pass": true,
+    "detail": "filter peak 32.0000 vs breakdown 32.0000"
+  },
+  {
+    "name": "user_breakdown_platform_APPLE_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0009 vs breakdown 0.0009"
+  },
+  {
+    "name": "user_breakdown_platform_KEPLER_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 20.0000 vs breakdown 20.0000"
+  },
+  {
+    "name": "user_breakdown_platform_KEPLER_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0001 vs breakdown 0.0001"
+  },
+  {
+    "name": "user_breakdown_platform_NETRANGE_HTML_TV_peak",
+    "pass": true,
+    "detail": "filter peak 4.0000 vs breakdown 4.0000"
+  },
+  {
+    "name": "user_breakdown_platform_NETRANGE_HTML_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0000 vs breakdown 0.0000"
+  },
+  {
+    "name": "user_breakdown_platform_WEB_peak",
+    "pass": true,
+    "detail": "filter peak 2.0000 vs breakdown 2.0000"
+  },
+  {
+    "name": "user_breakdown_platform_WEB_avg",
+    "pass": true,
+    "detail": "filter avg 0.0000 vs breakdown 0.0000"
+  },
+  {
+    "name": "user_breakdown_platform_MWEB_peak",
+    "pass": true,
+    "detail": "filter peak 1.0000 vs breakdown 1.0000"
+  },
+  {
+    "name": "user_breakdown_platform_MWEB_avg",
+    "pass": true,
+    "detail": "filter avg 0.0000 vs breakdown 0.0000"
+  },
+  {
+    "name": "user_breakdown_platform_ROKU_TV_peak",
+    "pass": true,
+    "detail": "filter peak 2.0000 vs breakdown 2.0000"
+  },
+  {
+    "name": "user_breakdown_platform_ROKU_TV_avg",
+    "pass": true,
+    "detail": "filter avg 0.0000 vs breakdown 0.0000"
+  },
+  {
+    "name": "user_breakdown_country_india_peak",
+    "pass": true,
+    "detail": "filter peak 18418.0000 vs breakdown 18418.0000"
+  },
+  {
+    "name": "user_breakdown_country_india_avg",
+    "pass": true,
+    "detail": "filter avg 0.5434 vs breakdown 0.5434"
+  },
+  {
+    "name": "user_breakdown_show_name_ggdkb_peak",
+    "pass": true,
+    "detail": "filter peak 6492.0000 vs breakdown 6492.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_ggdkb_avg",
+    "pass": true,
+    "detail": "filter avg 0.1546 vs breakdown 0.1546"
+  },
+  {
+    "name": "user_breakdown_show_name_hfgdb_peak",
+    "pass": true,
+    "detail": "filter peak 345.0000 vs breakdown 345.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_hfgdb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0110 vs breakdown 0.0110"
+  },
+  {
+    "name": "user_breakdown_show_name_djbdb_peak",
+    "pass": true,
+    "detail": "filter peak 374.0000 vs breakdown 374.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_djbdb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0118 vs breakdown 0.0118"
+  },
+  {
+    "name": "user_breakdown_show_name_bjdjb_peak",
+    "pass": true,
+    "detail": "filter peak 418.0000 vs breakdown 418.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_bjdjb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0110 vs breakdown 0.0110"
+  },
+  {
+    "name": "user_breakdown_show_name_gdckb_peak",
+    "pass": true,
+    "detail": "filter peak 646.0000 vs breakdown 646.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_gdckb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0107 vs breakdown 0.0107"
+  },
+  {
+    "name": "user_breakdown_show_name_fhdbb_peak",
+    "pass": true,
+    "detail": "filter peak 338.0000 vs breakdown 338.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_fhdbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0064 vs breakdown 0.0064"
+  },
+  {
+    "name": "user_breakdown_show_name_ckfcb_peak",
+    "pass": true,
+    "detail": "filter peak 216.0000 vs breakdown 216.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_ckfcb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0068 vs breakdown 0.0068"
+  },
+  {
+    "name": "user_breakdown_show_name_dgfdb_peak",
+    "pass": true,
+    "detail": "filter peak 306.0000 vs breakdown 306.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_dgfdb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0083 vs breakdown 0.0083"
+  },
+  {
+    "name": "user_breakdown_show_name_hhfhb_peak",
+    "pass": true,
+    "detail": "filter peak 265.0000 vs breakdown 265.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_hhfhb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0082 vs breakdown 0.0082"
+  },
+  {
+    "name": "user_breakdown_show_name_ddglb_peak",
+    "pass": true,
+    "detail": "filter peak 155.0000 vs breakdown 155.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_ddglb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0026 vs breakdown 0.0026"
+  },
+  {
+    "name": "user_breakdown_show_name_djgdb_peak",
+    "pass": true,
+    "detail": "filter peak 293.0000 vs breakdown 293.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_djgdb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0053 vs breakdown 0.0053"
+  },
+  {
+    "name": "user_breakdown_show_name_gjfcb_peak",
+    "pass": true,
+    "detail": "filter peak 157.0000 vs breakdown 157.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_gjfcb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0045 vs breakdown 0.0045"
+  },
+  {
+    "name": "user_breakdown_show_name_hfbhb_peak",
+    "pass": true,
+    "detail": "filter peak 195.0000 vs breakdown 195.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_hfbhb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0057 vs breakdown 0.0057"
+  },
+  {
+    "name": "user_breakdown_show_name_gjdcb_peak",
+    "pass": true,
+    "detail": "filter peak 357.0000 vs breakdown 357.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_gjdcb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0053 vs breakdown 0.0053"
+  },
+  {
+    "name": "user_breakdown_show_name_bbbbb_peak",
+    "pass": true,
+    "detail": "filter peak 174.0000 vs breakdown 174.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_bbbbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0050 vs breakdown 0.0050"
+  },
+  {
+    "name": "user_breakdown_show_name_ckgcb_peak",
+    "pass": true,
+    "detail": "filter peak 176.0000 vs breakdown 176.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_ckgcb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0058 vs breakdown 0.0058"
+  },
+  {
+    "name": "user_breakdown_show_name_ckfgb_peak",
+    "pass": true,
+    "detail": "filter peak 103.0000 vs breakdown 103.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_ckfgb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0020 vs breakdown 0.0020"
+  },
+  {
+    "name": "user_breakdown_show_name_fcfbb_peak",
+    "pass": true,
+    "detail": "filter peak 193.0000 vs breakdown 193.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_fcfbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0052 vs breakdown 0.0052"
+  },
+  {
+    "name": "user_breakdown_show_name_hfcdb_peak",
+    "pass": true,
+    "detail": "filter peak 76.0000 vs breakdown 76.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_hfcdb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0014 vs breakdown 0.0014"
+  },
+  {
+    "name": "user_breakdown_show_name_ccfgb_peak",
+    "pass": true,
+    "detail": "filter peak 156.0000 vs breakdown 156.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_ccfgb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0045 vs breakdown 0.0045"
+  },
+  {
+    "name": "user_breakdown_show_name_ccckb_peak",
+    "pass": true,
+    "detail": "filter peak 121.0000 vs breakdown 121.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_ccckb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0039 vs breakdown 0.0039"
+  },
+  {
+    "name": "user_breakdown_show_name_ggckb_peak",
+    "pass": true,
+    "detail": "filter peak 103.0000 vs breakdown 103.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_ggckb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0028 vs breakdown 0.0028"
+  },
+  {
+    "name": "user_breakdown_show_name_fhgjb_peak",
+    "pass": true,
+    "detail": "filter peak 100.0000 vs breakdown 100.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_fhgjb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0026 vs breakdown 0.0026"
+  },
+  {
+    "name": "user_breakdown_show_name_bggfb_peak",
+    "pass": true,
+    "detail": "filter peak 50.0000 vs breakdown 50.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_bggfb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0015 vs breakdown 0.0015"
+  },
+  {
+    "name": "user_breakdown_show_name_bgfjb_peak",
+    "pass": true,
+    "detail": "filter peak 168.0000 vs breakdown 168.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_bgfjb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0025 vs breakdown 0.0025"
+  },
+  {
+    "name": "user_breakdown_show_name_gbccb_peak",
+    "pass": true,
+    "detail": "filter peak 84.0000 vs breakdown 84.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_gbccb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0024 vs breakdown 0.0024"
+  },
+  {
+    "name": "user_breakdown_show_name_ggfkb_peak",
+    "pass": true,
+    "detail": "filter peak 134.0000 vs breakdown 134.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_ggfkb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0013 vs breakdown 0.0013"
+  },
+  {
+    "name": "user_breakdown_show_name_bjbfb_peak",
+    "pass": true,
+    "detail": "filter peak 62.0000 vs breakdown 62.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_bjbfb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0014 vs breakdown 0.0014"
+  },
+  {
+    "name": "user_breakdown_show_name_hfdlb_peak",
+    "pass": true,
+    "detail": "filter peak 46.0000 vs breakdown 46.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_hfdlb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0011 vs breakdown 0.0011"
+  },
+  {
+    "name": "user_breakdown_show_name_bdgfb_peak",
+    "pass": true,
+    "detail": "filter peak 77.0000 vs breakdown 77.0000"
+  },
+  {
+    "name": "user_breakdown_show_name_bdgfb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0023 vs breakdown 0.0023"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-1280*720_peak",
+    "pass": true,
+    "detail": "filter peak 2386.0000 vs breakdown 2386.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-1280*720_avg",
+    "pass": true,
+    "detail": "filter avg 0.0685 vs breakdown 0.0685"
+  },
+  {
+    "name": "user_breakdown_video_resolution_NA_peak",
+    "pass": true,
+    "detail": "filter peak 2298.0000 vs breakdown 2298.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_NA_avg",
+    "pass": true,
+    "detail": "filter avg 0.0659 vs breakdown 0.0659"
+  },
+  {
+    "name": "user_breakdown_video_resolution_1920_*_1080_peak",
+    "pass": true,
+    "detail": "filter peak 2761.0000 vs breakdown 2761.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_1920_*_1080_avg",
+    "pass": true,
+    "detail": "filter avg 0.0801 vs breakdown 0.0801"
+  },
+  {
+    "name": "user_breakdown_video_resolution_1080*1920_peak",
+    "pass": true,
+    "detail": "filter peak 1780.0000 vs breakdown 1780.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_1080*1920_avg",
+    "pass": true,
+    "detail": "filter avg 0.0521 vs breakdown 0.0521"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-Auto_peak",
+    "pass": true,
+    "detail": "filter peak 1593.0000 vs breakdown 1593.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-Auto_avg",
+    "pass": true,
+    "detail": "filter avg 0.0397 vs breakdown 0.0397"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-1920*1080_peak",
+    "pass": true,
+    "detail": "filter peak 1056.0000 vs breakdown 1056.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-1920*1080_avg",
+    "pass": true,
+    "detail": "filter avg 0.0322 vs breakdown 0.0322"
+  },
+  {
+    "name": "user_breakdown_video_resolution_1920*1080_peak",
+    "pass": true,
+    "detail": "filter peak 965.0000 vs breakdown 965.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_1920*1080_avg",
+    "pass": true,
+    "detail": "filter avg 0.0291 vs breakdown 0.0291"
+  },
+  {
+    "name": "user_breakdown_video_resolution_1280_*_720_peak",
+    "pass": true,
+    "detail": "filter peak 976.0000 vs breakdown 976.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_1280_*_720_avg",
+    "pass": true,
+    "detail": "filter avg 0.0289 vs breakdown 0.0289"
+  },
+  {
+    "name": "user_breakdown_video_resolution_720*1280_peak",
+    "pass": true,
+    "detail": "filter peak 446.0000 vs breakdown 446.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_720*1280_avg",
+    "pass": true,
+    "detail": "filter avg 0.0128 vs breakdown 0.0128"
+  },
+  {
+    "name": "user_breakdown_video_resolution_1280*720_peak",
+    "pass": true,
+    "detail": "filter peak 431.0000 vs breakdown 431.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_1280*720_avg",
+    "pass": true,
+    "detail": "filter avg 0.0124 vs breakdown 0.0124"
+  },
+  {
+    "name": "user_breakdown_video_resolution_960_*_540_peak",
+    "pass": true,
+    "detail": "filter peak 844.0000 vs breakdown 844.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_960_*_540_avg",
+    "pass": true,
+    "detail": "filter avg 0.0212 vs breakdown 0.0212"
+  },
+  {
+    "name": "user_breakdown_video_resolution_960*540_peak",
+    "pass": true,
+    "detail": "filter peak 457.0000 vs breakdown 457.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_960*540_avg",
+    "pass": true,
+    "detail": "filter avg 0.0120 vs breakdown 0.0120"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-960*540_peak",
+    "pass": true,
+    "detail": "filter peak 306.0000 vs breakdown 306.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-960*540_avg",
+    "pass": true,
+    "detail": "filter avg 0.0060 vs breakdown 0.0060"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-640*360_peak",
+    "pass": true,
+    "detail": "filter peak 172.0000 vs breakdown 172.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-640*360_avg",
+    "pass": true,
+    "detail": "filter avg 0.0054 vs breakdown 0.0054"
+  },
+  {
+    "name": "user_breakdown_video_resolution_0-1280*720_peak",
+    "pass": true,
+    "detail": "filter peak 91.0000 vs breakdown 91.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_0-1280*720_avg",
+    "pass": true,
+    "detail": "filter avg 0.0028 vs breakdown 0.0028"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-854*480_peak",
+    "pass": true,
+    "detail": "filter peak 119.0000 vs breakdown 119.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-854*480_avg",
+    "pass": true,
+    "detail": "filter avg 0.0033 vs breakdown 0.0033"
+  },
+  {
+    "name": "user_breakdown_video_resolution_DataSaver-640*360_peak",
+    "pass": true,
+    "detail": "filter peak 101.0000 vs breakdown 101.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_DataSaver-640*360_avg",
+    "pass": true,
+    "detail": "filter avg 0.0031 vs breakdown 0.0031"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-1_peak",
+    "pass": true,
+    "detail": "filter peak 96.0000 vs breakdown 96.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-1_avg",
+    "pass": true,
+    "detail": "filter avg 0.0024 vs breakdown 0.0024"
+  },
+  {
+    "name": "user_breakdown_video_resolution_0-1920*1080_peak",
+    "pass": true,
+    "detail": "filter peak 91.0000 vs breakdown 91.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_0-1920*1080_avg",
+    "pass": true,
+    "detail": "filter avg 0.0027 vs breakdown 0.0027"
+  },
+  {
+    "name": "user_breakdown_video_resolution_640_*_360_peak",
+    "pass": true,
+    "detail": "filter peak 190.0000 vs breakdown 190.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_640_*_360_avg",
+    "pass": true,
+    "detail": "filter avg 0.0049 vs breakdown 0.0049"
+  },
+  {
+    "name": "user_breakdown_video_resolution_NA-1280*720_peak",
+    "pass": true,
+    "detail": "filter peak 26.0000 vs breakdown 26.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_NA-1280*720_avg",
+    "pass": true,
+    "detail": "filter avg 0.0033 vs breakdown 0.0033"
+  },
+  {
+    "name": "user_breakdown_video_resolution_864*1536_peak",
+    "pass": true,
+    "detail": "filter peak 89.0000 vs breakdown 89.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_864*1536_avg",
+    "pass": true,
+    "detail": "filter avg 0.0021 vs breakdown 0.0021"
+  },
+  {
+    "name": "user_breakdown_video_resolution_3840*2160_peak",
+    "pass": true,
+    "detail": "filter peak 112.0000 vs breakdown 112.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_3840*2160_avg",
+    "pass": true,
+    "detail": "filter avg 0.0030 vs breakdown 0.0030"
+  },
+  {
+    "name": "user_breakdown_video_resolution_3840_*_2160_peak",
+    "pass": true,
+    "detail": "filter peak 96.0000 vs breakdown 96.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_3840_*_2160_avg",
+    "pass": true,
+    "detail": "filter avg 0.0026 vs breakdown 0.0026"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-256*144_peak",
+    "pass": true,
+    "detail": "filter peak 55.0000 vs breakdown 55.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-256*144_avg",
+    "pass": true,
+    "detail": "filter avg 0.0011 vs breakdown 0.0011"
+  },
+  {
+    "name": "user_breakdown_video_resolution_854_*_480_peak",
+    "pass": true,
+    "detail": "filter peak 85.0000 vs breakdown 85.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_854_*_480_avg",
+    "pass": true,
+    "detail": "filter avg 0.0023 vs breakdown 0.0023"
+  },
+  {
+    "name": "user_breakdown_video_resolution_NA-640*360_peak",
+    "pass": true,
+    "detail": "filter peak 21.0000 vs breakdown 21.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_NA-640*360_avg",
+    "pass": true,
+    "detail": "filter avg 0.0022 vs breakdown 0.0022"
+  },
+  {
+    "name": "user_breakdown_video_resolution_640*360_peak",
+    "pass": true,
+    "detail": "filter peak 70.0000 vs breakdown 70.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_640*360_avg",
+    "pass": true,
+    "detail": "filter avg 0.0019 vs breakdown 0.0019"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-426*240_peak",
+    "pass": true,
+    "detail": "filter peak 51.0000 vs breakdown 51.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_Auto-426*240_avg",
+    "pass": true,
+    "detail": "filter avg 0.0013 vs breakdown 0.0013"
+  },
+  {
+    "name": "user_breakdown_video_resolution_768*1366_peak",
+    "pass": true,
+    "detail": "filter peak 46.0000 vs breakdown 46.0000"
+  },
+  {
+    "name": "user_breakdown_video_resolution_768*1366_avg",
+    "pass": true,
+    "detail": "filter avg 0.0012 vs breakdown 0.0012"
+  },
+  {
+    "name": "user_breakdown_video_type_vod_peak",
+    "pass": true,
+    "detail": "filter peak 10649.0000 vs breakdown 10649.0000"
+  },
+  {
+    "name": "user_breakdown_video_type_vod_avg",
+    "pass": true,
+    "detail": "filter avg 0.3471 vs breakdown 0.3471"
+  },
+  {
+    "name": "user_breakdown_video_type_live_peak",
+    "pass": true,
+    "detail": "filter peak 7737.0000 vs breakdown 7737.0000"
+  },
+  {
+    "name": "user_breakdown_video_type_live_avg",
+    "pass": true,
+    "detail": "filter avg 0.1827 vs breakdown 0.1827"
+  },
+  {
+    "name": "user_breakdown_category_cdbgg_peak",
+    "pass": true,
+    "detail": "filter peak 6627.0000 vs breakdown 6627.0000"
+  },
+  {
+    "name": "user_breakdown_category_cdbgg_avg",
+    "pass": true,
+    "detail": "filter avg 0.1582 vs breakdown 0.1582"
+  },
+  {
+    "name": "user_breakdown_category_ddddd_peak",
+    "pass": true,
+    "detail": "filter peak 577.0000 vs breakdown 577.0000"
+  },
+  {
+    "name": "user_breakdown_category_ddddd_avg",
+    "pass": true,
+    "detail": "filter avg 0.0164 vs breakdown 0.0164"
+  },
+  {
+    "name": "user_breakdown_category_dhfhp_peak",
+    "pass": true,
+    "detail": "filter peak 398.0000 vs breakdown 398.0000"
+  },
+  {
+    "name": "user_breakdown_category_dhfhp_avg",
+    "pass": true,
+    "detail": "filter avg 0.0128 vs breakdown 0.0128"
+  },
+  {
+    "name": "user_breakdown_category_bhcfm_peak",
+    "pass": true,
+    "detail": "filter peak 544.0000 vs breakdown 544.0000"
+  },
+  {
+    "name": "user_breakdown_category_bhcfm_avg",
+    "pass": true,
+    "detail": "filter avg 0.0136 vs breakdown 0.0136"
+  },
+  {
+    "name": "user_breakdown_category_cffck_peak",
+    "pass": true,
+    "detail": "filter peak 325.0000 vs breakdown 325.0000"
+  },
+  {
+    "name": "user_breakdown_category_cffck_avg",
+    "pass": true,
+    "detail": "filter avg 0.0101 vs breakdown 0.0101"
+  },
+  {
+    "name": "user_breakdown_category_cgdgn_peak",
+    "pass": true,
+    "detail": "filter peak 740.0000 vs breakdown 740.0000"
+  },
+  {
+    "name": "user_breakdown_category_cgdgn_avg",
+    "pass": true,
+    "detail": "filter avg 0.0135 vs breakdown 0.0135"
+  },
+  {
+    "name": "user_breakdown_category_cfdgn_peak",
+    "pass": true,
+    "detail": "filter peak 490.0000 vs breakdown 490.0000"
+  },
+  {
+    "name": "user_breakdown_category_cfdgn_avg",
+    "pass": true,
+    "detail": "filter avg 0.0102 vs breakdown 0.0102"
+  },
+  {
+    "name": "user_breakdown_category_bhdbj_peak",
+    "pass": true,
+    "detail": "filter peak 453.0000 vs breakdown 453.0000"
+  },
+  {
+    "name": "user_breakdown_category_bhdbj_avg",
+    "pass": true,
+    "detail": "filter avg 0.0124 vs breakdown 0.0124"
+  },
+  {
+    "name": "user_breakdown_category_dgbdl_peak",
+    "pass": true,
+    "detail": "filter peak 371.0000 vs breakdown 371.0000"
+  },
+  {
+    "name": "user_breakdown_category_dgbdl_avg",
+    "pass": true,
+    "detail": "filter avg 0.0101 vs breakdown 0.0101"
+  },
+  {
+    "name": "user_breakdown_category_cjfck_peak",
+    "pass": true,
+    "detail": "filter peak 285.0000 vs breakdown 285.0000"
+  },
+  {
+    "name": "user_breakdown_category_cjfck_avg",
+    "pass": true,
+    "detail": "filter avg 0.0093 vs breakdown 0.0093"
+  },
+  {
+    "name": "user_breakdown_category_dfddd_peak",
+    "pass": true,
+    "detail": "filter peak 214.0000 vs breakdown 214.0000"
+  },
+  {
+    "name": "user_breakdown_category_dfddd_avg",
+    "pass": true,
+    "detail": "filter avg 0.0058 vs breakdown 0.0058"
+  },
+  {
+    "name": "user_breakdown_category_bcbbb_peak",
+    "pass": true,
+    "detail": "filter peak 216.0000 vs breakdown 216.0000"
+  },
+  {
+    "name": "user_breakdown_category_bcbbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0068 vs breakdown 0.0068"
+  },
+  {
+    "name": "user_breakdown_category_dgchh_peak",
+    "pass": true,
+    "detail": "filter peak 286.0000 vs breakdown 286.0000"
+  },
+  {
+    "name": "user_breakdown_category_dgchh_avg",
+    "pass": true,
+    "detail": "filter avg 0.0086 vs breakdown 0.0086"
+  },
+  {
+    "name": "user_breakdown_category_cjbgg_peak",
+    "pass": true,
+    "detail": "filter peak 207.0000 vs breakdown 207.0000"
+  },
+  {
+    "name": "user_breakdown_category_cjbgg_avg",
+    "pass": true,
+    "detail": "filter avg 0.0063 vs breakdown 0.0063"
+  },
+  {
+    "name": "user_breakdown_category_ddfhp_peak",
+    "pass": true,
+    "detail": "filter peak 256.0000 vs breakdown 256.0000"
+  },
+  {
+    "name": "user_breakdown_category_ddfhp_avg",
+    "pass": true,
+    "detail": "filter avg 0.0077 vs breakdown 0.0077"
+  },
+  {
+    "name": "user_breakdown_category_ccccc_peak",
+    "pass": true,
+    "detail": "filter peak 306.0000 vs breakdown 306.0000"
+  },
+  {
+    "name": "user_breakdown_category_ccccc_avg",
+    "pass": true,
+    "detail": "filter avg 0.0061 vs breakdown 0.0061"
+  },
+  {
+    "name": "user_breakdown_category_cfbgg_peak",
+    "pass": true,
+    "detail": "filter peak 247.0000 vs breakdown 247.0000"
+  },
+  {
+    "name": "user_breakdown_category_cfbgg_avg",
+    "pass": true,
+    "detail": "filter avg 0.0053 vs breakdown 0.0053"
+  },
+  {
+    "name": "user_breakdown_category_djfhp_peak",
+    "pass": true,
+    "detail": "filter peak 153.0000 vs breakdown 153.0000"
+  },
+  {
+    "name": "user_breakdown_category_djfhp_avg",
+    "pass": true,
+    "detail": "filter avg 0.0039 vs breakdown 0.0039"
+  },
+  {
+    "name": "user_breakdown_category_bjcfm_peak",
+    "pass": true,
+    "detail": "filter peak 183.0000 vs breakdown 183.0000"
+  },
+  {
+    "name": "user_breakdown_category_bjcfm_avg",
+    "pass": true,
+    "detail": "filter avg 0.0053 vs breakdown 0.0053"
+  },
+  {
+    "name": "user_breakdown_category_bbdbj_peak",
+    "pass": true,
+    "detail": "filter peak 161.0000 vs breakdown 161.0000"
+  },
+  {
+    "name": "user_breakdown_category_bbdbj_avg",
+    "pass": true,
+    "detail": "filter avg 0.0041 vs breakdown 0.0041"
+  },
+  {
+    "name": "user_breakdown_category_bcfff_peak",
+    "pass": true,
+    "detail": "filter peak 177.0000 vs breakdown 177.0000"
+  },
+  {
+    "name": "user_breakdown_category_bcfff_avg",
+    "pass": true,
+    "detail": "filter avg 0.0056 vs breakdown 0.0056"
+  },
+  {
+    "name": "user_breakdown_category_djbdl_peak",
+    "pass": true,
+    "detail": "filter peak 228.0000 vs breakdown 228.0000"
+  },
+  {
+    "name": "user_breakdown_category_djbdl_avg",
+    "pass": true,
+    "detail": "filter avg 0.0051 vs breakdown 0.0051"
+  },
+  {
+    "name": "user_breakdown_category_bgcfm_peak",
+    "pass": true,
+    "detail": "filter peak 196.0000 vs breakdown 196.0000"
+  },
+  {
+    "name": "user_breakdown_category_bgcfm_avg",
+    "pass": true,
+    "detail": "filter avg 0.0056 vs breakdown 0.0056"
+  },
+  {
+    "name": "user_breakdown_category_dcfhp_peak",
+    "pass": true,
+    "detail": "filter peak 125.0000 vs breakdown 125.0000"
+  },
+  {
+    "name": "user_breakdown_category_dcfhp_avg",
+    "pass": true,
+    "detail": "filter avg 0.0034 vs breakdown 0.0034"
+  },
+  {
+    "name": "user_breakdown_category_bgbbb_peak",
+    "pass": true,
+    "detail": "filter peak 125.0000 vs breakdown 125.0000"
+  },
+  {
+    "name": "user_breakdown_category_bgbbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0034 vs breakdown 0.0034"
+  },
+  {
+    "name": "user_breakdown_category_djchh_peak",
+    "pass": true,
+    "detail": "filter peak 186.0000 vs breakdown 186.0000"
+  },
+  {
+    "name": "user_breakdown_category_djchh_avg",
+    "pass": true,
+    "detail": "filter avg 0.0052 vs breakdown 0.0052"
+  },
+  {
+    "name": "user_breakdown_category_dhddd_peak",
+    "pass": true,
+    "detail": "filter peak 160.0000 vs breakdown 160.0000"
+  },
+  {
+    "name": "user_breakdown_category_dhddd_avg",
+    "pass": true,
+    "detail": "filter avg 0.0048 vs breakdown 0.0048"
+  },
+  {
+    "name": "user_breakdown_category_cbccc_peak",
+    "pass": true,
+    "detail": "filter peak 162.0000 vs breakdown 162.0000"
+  },
+  {
+    "name": "user_breakdown_category_cbccc_avg",
+    "pass": true,
+    "detail": "filter avg 0.0051 vs breakdown 0.0051"
+  },
+  {
+    "name": "user_breakdown_category_dcchh_peak",
+    "pass": true,
+    "detail": "filter peak 163.0000 vs breakdown 163.0000"
+  },
+  {
+    "name": "user_breakdown_category_dcchh_avg",
+    "pass": true,
+    "detail": "filter avg 0.0047 vs breakdown 0.0047"
+  },
+  {
+    "name": "user_breakdown_category_bjbbb_peak",
+    "pass": true,
+    "detail": "filter peak 227.0000 vs breakdown 227.0000"
+  },
+  {
+    "name": "user_breakdown_category_bjbbb_avg",
+    "pass": true,
+    "detail": "filter avg 0.0042 vs breakdown 0.0042"
+  },
+  {
+    "name": "user_partition_sum_platform",
+    "pass": true,
+    "detail": "0/1688027 minutes mismatch (worst delta 0.0000) — sum of platform slices vs unfiltered"
+  },
+  {
+    "name": "user_partition_sum_country",
+    "pass": true,
+    "detail": "0/1688027 minutes mismatch (worst delta 0.0000) — sum of country slices vs unfiltered"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_ANDROID_PHONE",
+    "pass": true,
+    "detail": "filtered peak 6077.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_JIO_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 4938.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_SONY_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 2266.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_SAMSUNG_HTML_TV",
+    "pass": true,
+    "detail": "filtered peak 1004.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_IPHONE",
+    "pass": true,
+    "detail": "filtered peak 709.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_Web",
+    "pass": true,
+    "detail": "filtered peak 1211.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_LG_HTML_TV",
+    "pass": true,
+    "detail": "filtered peak 788.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_FIRE_TV",
+    "pass": true,
+    "detail": "filtered peak 597.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_XIAOMI_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 484.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_SONY_HTML_TV",
+    "pass": true,
+    "detail": "filtered peak 259.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_country_india",
+    "pass": true,
+    "detail": "filtered peak 18418.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_show_name_ggdkb",
+    "pass": true,
+    "detail": "filtered peak 6492.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_show_name_hfgdb",
+    "pass": true,
+    "detail": "filtered peak 345.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_show_name_djbdb",
+    "pass": true,
+    "detail": "filtered peak 374.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_show_name_bjdjb",
+    "pass": true,
+    "detail": "filtered peak 418.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_show_name_gdckb",
+    "pass": true,
+    "detail": "filtered peak 646.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_show_name_fhdbb",
+    "pass": true,
+    "detail": "filtered peak 338.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_show_name_ckfcb",
+    "pass": true,
+    "detail": "filtered peak 216.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_show_name_dgfdb",
+    "pass": true,
+    "detail": "filtered peak 306.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_show_name_hhfhb",
+    "pass": true,
+    "detail": "filtered peak 265.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_show_name_ddglb",
+    "pass": true,
+    "detail": "filtered peak 155.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_resolution_Auto-1280*720",
+    "pass": true,
+    "detail": "filtered peak 2386.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_resolution_NA",
+    "pass": true,
+    "detail": "filtered peak 2298.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_resolution_1920_*_1080",
+    "pass": true,
+    "detail": "filtered peak 2761.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_resolution_1080*1920",
+    "pass": true,
+    "detail": "filtered peak 1780.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_resolution_Auto-Auto",
+    "pass": true,
+    "detail": "filtered peak 1593.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_resolution_Auto-1920*1080",
+    "pass": true,
+    "detail": "filtered peak 1056.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_resolution_1920*1080",
+    "pass": true,
+    "detail": "filtered peak 965.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_resolution_1280_*_720",
+    "pass": true,
+    "detail": "filtered peak 976.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_resolution_720*1280",
+    "pass": true,
+    "detail": "filtered peak 446.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_resolution_1280*720",
+    "pass": true,
+    "detail": "filtered peak 431.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_type_vod",
+    "pass": true,
+    "detail": "filtered peak 10649.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_video_type_live",
+    "pass": true,
+    "detail": "filtered peak 7737.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_category_cdbgg",
+    "pass": true,
+    "detail": "filtered peak 6627.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_category_ddddd",
+    "pass": true,
+    "detail": "filtered peak 577.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_category_dhfhp",
+    "pass": true,
+    "detail": "filtered peak 398.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_category_bhcfm",
+    "pass": true,
+    "detail": "filtered peak 544.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_category_cffck",
+    "pass": true,
+    "detail": "filtered peak 325.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_category_cgdgn",
+    "pass": true,
+    "detail": "filtered peak 740.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_category_cfdgn",
+    "pass": true,
+    "detail": "filtered peak 490.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_category_bhdbj",
+    "pass": true,
+    "detail": "filtered peak 453.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_category_dgbdl",
+    "pass": true,
+    "detail": "filtered peak 371.0000 \u003c= unfiltered 18418.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_category_cjfck",
+    "pass": true,
+    "detail": "filtered peak 285.0000 \u003c= unfiltered 18418.0000"
+  }
+]

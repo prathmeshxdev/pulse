@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { BreakdownRow, Filter, Grain } from "../types";
+import type { BreakdownRow, CountUnit, Filter, Grain } from "../types";
 import { getBreakdown } from "../api";
 
 interface Props {
   start: string;
   end: string;
   grain: Grain;
+  unit: CountUnit;
   dimension: string;
   filters: Filter[];
 }
@@ -14,7 +15,7 @@ interface Props {
 // Breakdown renders peak concurrency per dimension value (top-N) as a horizontal
 // bar chart — the "which platform/country/content peaks highest" view. Each bar
 // comes from the same normative summary query filtered to that value.
-export function Breakdown({ start, end, grain, dimension, filters }: Props) {
+export function Breakdown({ start, end, grain, unit, dimension, filters }: Props) {
   const [rows, setRows] = useState<BreakdownRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,7 @@ export function Breakdown({ start, end, grain, dimension, filters }: Props) {
     let cancelled = false;
     setLoading(true);
     const h = setTimeout(() => {
-      getBreakdown(start, end, grain, dimension, filters)
+      getBreakdown(start, end, grain, dimension, filters, unit)
         .then((r) => !cancelled && (setRows(r), setErr(null)))
         .catch((e) => !cancelled && setErr(String(e)))
         .finally(() => !cancelled && setLoading(false));
@@ -33,7 +34,7 @@ export function Breakdown({ start, end, grain, dimension, filters }: Props) {
       cancelled = true;
       clearTimeout(h);
     };
-  }, [start, end, grain, dimension, JSON.stringify(filters)]);
+  }, [start, end, grain, unit, dimension, JSON.stringify(filters)]);
 
   if (!dimension) return null;
 

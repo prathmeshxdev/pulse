@@ -34,7 +34,7 @@ go run ./cmd/pipeline -dsn "$CLICKHOUSE_DSN" -exec "$(cat ../clickhouse/scripts/
 
 echo "→ start ClickStack + LibreChat (profile: full)"
 cd "$ROOT"
-"${COMPOSE[@]}" --profile full up -d clickstack librechat-mongodb clickhouse-mcp librechat
+"${COMPOSE[@]}" --profile full up -d clickstack librechat-mongodb clickhouse-mcp pulse-mcp librechat
 
 echo
 echo "=== Integration stack ==="
@@ -42,6 +42,7 @@ echo "  HyperDX UI:     http://localhost:8081"
 echo "  OTLP endpoint:  http://localhost:4318  (set OTEL_EXPORTER_OTLP_ENDPOINT in .env)"
 echo "  LibreChat UI:   http://localhost:3080  (register, then create Agent — see librechat/AGENT_SETUP.md)"
 echo "  ClickHouse MCP: http://localhost:8001/sse"
+echo "  Pulse API MCP:  http://localhost:8002/sse  (chart/breakdown — same as dashboard)"
 echo
 echo "Start Pulse API with tracing:"
 echo "  OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 docker compose up backend frontend redis"

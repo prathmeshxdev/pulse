@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -60,7 +59,39 @@ func New(cfg config.ServerConfig, ch driver.Conn, rdb *redis.Client) *Server {
 	return s
 }
 
-func (s *Server) Handler() http.Handler { return s.mux }
+func (s *Server) Handler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		started := time.Now()
+		ctx, span := s.tracer.Start(r.Context(), "http."+r.Method+" "+r.URL.Path,
+			trace.WithAttributes(
+				otelx.StringAttr("http.method", r.Method),
+				otelx.StringAttr("http.route", r.URL.Path),
+			),
+		)
+		defer span.End()
+		rw := &statusRecorder{ResponseWriter: w, code: http.StatusOK}
+		s.mux.ServeHTTP(rw, r.WithContext(ctx))
+		var err error
+		if rw.code >= 400 {
+			err = fmt.Errorf("http %d", rw.code)
+		}
+		// Request-level metrics/logs for every route (chart/breakdown add richer child spans).
+		otelx.ObserveRequest(ctx, span, r.URL.Path, started, err,
+			otelx.IntAttr("http.status_code", rw.code),
+			otelx.StringAttr("http.method", r.Method),
+		)
+	})
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	code int
+}
+
+func (s *statusRecorder) WriteHeader(code int) {
+	s.code = code
+	s.ResponseWriter.WriteHeader(code)
+}
 
 // Shutdown flushes the OTel exporter (no-op when disabled).
 func (s *Server) Shutdown(ctx context.Context) error {
@@ -279,17 +310,19 @@ type chartRequestBody struct {
 	End     string           `json:"end"`
 	Grain   string           `json:"grain"`
 	Metric  string           `json:"metric"`
+	Unit    string           `json:"unit"` // "" | "session" | "user"
 	Filters []filters.Filter `json:"filters"`
-	Engine  string           `json:"engine"` // "" | "narrow" (default) | "rollup"
 }
 
 func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
+	started := time.Now()
 	ctx, span := s.tracer.Start(r.Context(), "concurrency.chart")
 	defer span.End()
 
 	var body chartRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		span.SetStatus(codes.Error, "bad json")
+		otelx.Error(ctx, "chart bad json", otelx.StringAttr("error.message", err.Error()))
 		writeErr(w, http.StatusBadRequest, "invalid json: "+err.Error())
 		return
 	}
@@ -300,11 +333,13 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 	)
 	start, err := parseTime(body.Start)
 	if err != nil {
+		otelx.Error(ctx, "chart invalid start", otelx.StringAttr("error.message", err.Error()))
 		writeErr(w, http.StatusBadRequest, "invalid start: "+err.Error())
 		return
 	}
 	end, err := parseTime(body.End)
 	if err != nil {
+		otelx.Error(ctx, "chart invalid end", otelx.StringAttr("error.message", err.Error()))
 		writeErr(w, http.StatusBadRequest, "invalid end: "+err.Error())
 		return
 	}
@@ -316,22 +351,18 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 		Metric:  concurrency.Metric(body.Metric),
 		Filters: body.Filters,
 	}
-	// Engine: narrow (default, semi-join) or the opt-in wide rollup. Rollup is used
-	// only when requested AND all filters are rollup dimensions; otherwise we fall
-	// back to narrow so the request never fails on an unsupported filter.
-	engine := "narrow"
-	var q concurrency.Query
-	if body.Engine == "rollup" && filters.RollupSupported(req.Filters) {
-		q, err = concurrency.BuildRollupQuery(req, s.cfg.Constants.Database, s.cfg.Constants.MaxSegmentSpanHours)
-		engine = "rollup"
+	if body.Unit != "" {
+		req.Unit = concurrency.ParseCountUnit(body.Unit)
 	} else {
-		q, err = concurrency.BuildChartQuery(req, s.cfg.Constants.Database, s.cfg.Constants.MaxSegmentSpanHours, s.propertyTypesResolver(ctx))
+		req.Unit = concurrency.ParseCountUnit(s.cfg.Constants.DefaultCountUnit())
 	}
+	span.SetAttributes(otelx.StringAttr("unit", string(req.Unit)))
+	q, err := concurrency.BuildChartQuery(req, s.cfg.Constants.Database, s.cfg.Constants.MaxSegmentSpanHours, s.propertyTypesResolver(ctx))
 	if err != nil {
+		otelx.Error(ctx, "chart build query failed", otelx.StringAttr("error.message", err.Error()))
 		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	span.SetAttributes(otelx.StringAttr("engine", engine))
 
 	key := preflight.KeyFromString(q.CacheKey)
 	type result struct {
@@ -340,11 +371,12 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 		Peak     any              `json:"peak,omitempty"`
 		Avg      any              `json:"avg,omitempty"`
 		CacheKey string           `json:"cache_key"`
-		Engine   string           `json:"engine"`
 	}
 
 	out, err := preflight.Do(ctx, s.preflight, key, func(ctx context.Context) (result, error) {
+		qStart := time.Now()
 		rows, err := chclient.QueryMaps(ctx, s.ch, q.SQL)
+		otelx.ObserveQuery(ctx, span, "chart", qStart, err)
 		if err != nil {
 			return result{}, err
 		}
@@ -361,11 +393,28 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
+		otelx.Error(ctx, "chart query failed", otelx.StringAttr("error.message", err.Error()))
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	span.SetAttributes(otelx.IntAttr("result_rows", len(out.Rows)))
-	out.Engine = engine
+	span.SetAttributes(
+		otelx.IntAttr("result_rows", len(out.Rows)),
+		otelx.StringAttr("cache_key", out.CacheKey),
+	)
+	if out.Peak != nil {
+		span.SetAttributes(otelx.FloatAttr("peak", toFloat64(out.Peak)))
+	}
+	if out.Avg != nil {
+		span.SetAttributes(otelx.FloatAttr("avg", toFloat64(out.Avg)))
+	}
+	otelx.Info(ctx, "chart ok",
+		otelx.StringAttr("grain", body.Grain),
+		otelx.StringAttr("unit", string(req.Unit)),
+		otelx.IntAttr("filters", len(body.Filters)),
+		otelx.IntAttr("result_rows", len(out.Rows)),
+		otelx.FloatAttr("peak", toFloat64(out.Peak)),
+		otelx.FloatAttr("duration_ms", float64(time.Since(started).Milliseconds())),
+	)
 	// Expose SQL only when explicitly requested (debug).
 	if r.URL.Query().Get("debug") == "1" {
 		out.SQL = q.SQL
@@ -377,6 +426,7 @@ type breakdownBody struct {
 	Start     string           `json:"start"`
 	End       string           `json:"end"`
 	Grain     string           `json:"grain"`
+	Unit      string           `json:"unit"`
 	Dimension string           `json:"dimension"`
 	Filters   []filters.Filter `json:"filters"`
 	Limit     int              `json:"limit"`
@@ -388,11 +438,13 @@ type breakdownBody struct {
 // surfaces the problem's point that different dimension values peak at different
 // times/heights.
 func (s *Server) handleBreakdown(w http.ResponseWriter, r *http.Request) {
+	started := time.Now()
 	ctx, span := s.tracer.Start(r.Context(), "concurrency.breakdown")
 	defer span.End()
 
 	var body breakdownBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		otelx.Error(ctx, "breakdown bad json", otelx.StringAttr("error.message", err.Error()))
 		writeErr(w, http.StatusBadRequest, "invalid json: "+err.Error())
 		return
 	}
@@ -410,6 +462,7 @@ func (s *Server) handleBreakdown(w http.ResponseWriter, r *http.Request) {
 	propTypes := s.propertyTypesResolver(ctx)
 	resolved, ok := filters.ResolveDimension(body.Dimension, db, propTypes)
 	if !ok {
+		otelx.Error(ctx, "breakdown unknown dimension", otelx.StringAttr("dimension", body.Dimension))
 		writeErr(w, http.StatusBadRequest, "unknown dimension: "+body.Dimension)
 		return
 	}
@@ -417,11 +470,21 @@ func (s *Server) handleBreakdown(w http.ResponseWriter, r *http.Request) {
 	if limit <= 0 || limit > 20 {
 		limit = 10
 	}
-	span.SetAttributes(otelx.StringAttr("dimension", body.Dimension), otelx.IntAttr("filters", len(body.Filters)))
+	unit := concurrency.ParseCountUnit(s.cfg.Constants.DefaultCountUnit())
+	if body.Unit != "" {
+		unit = concurrency.ParseCountUnit(body.Unit)
+	}
+	span.SetAttributes(
+		otelx.StringAttr("dimension", body.Dimension),
+		otelx.StringAttr("unit", string(unit)),
+		otelx.IntAttr("filters", len(body.Filters)),
+		otelx.IntAttr("limit", limit),
+	)
 
 	valueExpr := filters.BreakdownValueExpr(resolved, db, propTypes)
 	preds, hasFilters, err := filters.BuildSegmentPredicates(body.Filters, db, propTypes)
 	if err != nil {
+		otelx.Error(ctx, "breakdown bad filters", otelx.StringAttr("error.message", err.Error()))
 		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -430,11 +493,15 @@ func (s *Server) handleBreakdown(w http.ResponseWriter, r *http.Request) {
 	if hasFilters {
 		where += " AND " + strings.Join(preds, " AND ")
 	}
-	valSQL := "SELECT " + valueExpr + " AS v FROM " + db + ".session_active_segments FINAL " + where +
-		" GROUP BY v ORDER BY count() DESC LIMIT " + strconv.Itoa(limit)
+	segTable := concurrency.SegmentTable(unit)
+	valSQL := fmt.Sprintf("SELECT %s AS v FROM %s.%s FINAL %s GROUP BY v ORDER BY count() DESC LIMIT %d",
+		valueExpr, db, segTable, where, limit)
+	qStart := time.Now()
 	valRows, err := chclient.QueryMaps(ctx, s.ch, valSQL)
+	otelx.ObserveQuery(ctx, span, "breakdown.values", qStart, err)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
+		otelx.Error(ctx, "breakdown values query failed", otelx.StringAttr("error.message", err.Error()))
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -457,8 +524,9 @@ func (s *Server) handleBreakdown(w http.ResponseWriter, r *http.Request) {
 			defer func() { <-sem }()
 			req := concurrency.Request{
 				Start: start, End: end,
-				Grain:  concurrency.Grain(body.Grain),
-				Metric: concurrency.MetricSummary,
+				Grain:   concurrency.Grain(body.Grain),
+				Metric:  concurrency.MetricSummary,
+				Unit:    unit,
 				Filters: append(append([]filters.Filter{}, body.Filters...),
 					filters.Filter{Dimension: body.Dimension, Op: "eq", Value: v}),
 			}
@@ -466,7 +534,9 @@ func (s *Server) handleBreakdown(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				return
 			}
+			qs := time.Now()
 			rows, err := chclient.QueryMaps(ctx, s.ch, q.SQL)
+			otelx.ObserveQuery(ctx, span, "breakdown.cell", qs, err)
 			if err != nil || len(rows) != 1 {
 				return
 			}
@@ -486,6 +556,13 @@ func (s *Server) handleBreakdown(w http.ResponseWriter, r *http.Request) {
 		}
 		return pi > pj
 	})
+	span.SetAttributes(otelx.IntAttr("result_rows", len(out)))
+	otelx.Info(ctx, "breakdown ok",
+		otelx.StringAttr("dimension", body.Dimension),
+		otelx.StringAttr("unit", string(unit)),
+		otelx.IntAttr("result_rows", len(out)),
+		otelx.FloatAttr("duration_ms", float64(time.Since(started).Milliseconds())),
+	)
 	writeJSON(w, http.StatusOK, map[string]any{"dimension": body.Dimension, "rows": out})
 }
 
@@ -501,6 +578,28 @@ func numToPtr(v any) *float64 {
 		return &f
 	}
 	return nil
+}
+
+func toFloat64(v any) float64 {
+	switch t := v.(type) {
+	case float64:
+		return t
+	case float32:
+		return float64(t)
+	case int64:
+		return float64(t)
+	case uint64:
+		return float64(t)
+	case int:
+		return float64(t)
+	case *float64:
+		if t == nil {
+			return 0
+		}
+		return *t
+	default:
+		return 0
+	}
 }
 
 func parseTime(s string) (time.Time, error) {

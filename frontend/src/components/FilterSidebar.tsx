@@ -70,7 +70,7 @@ export function FilterSidebar({ dimensions, filters, onChange }: Props) {
       </div>
 
       <div style={{ marginTop: 10 }}>
-        {filters.length === 0 && <span className="muted">No filters — showing all sessions.</span>}
+        {filters.length === 0 && <span className="muted">No filters — full dataset.</span>}
         {filters.map((f, i) => (
           <span className="chip" key={`${f.dimension}-${f.value}-${i}`}>
             {f.dimension} = {f.value}

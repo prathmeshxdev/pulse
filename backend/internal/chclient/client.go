@@ -74,7 +74,9 @@ func parseDSN(dsn string) (*clickhouse.Options, error) {
 			Password: pass,
 		},
 		Settings: clickhouse.Settings{
-			"max_execution_time": 60,
+			// Bulk load (7M+ rows) and segment rebuilds need headroom; chart
+			// queries finish well under this. Override per-query when needed.
+			"max_execution_time": 600,
 			// session_active_segments is partitioned by toYYYYMMDD(segment_start)
 			// and its ReplacingMergeTree key is segment_id, which is derived from
 			// segment_start — so every version of a key lives in one partition.

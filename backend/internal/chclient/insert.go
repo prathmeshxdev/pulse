@@ -11,8 +11,11 @@ import (
 	"github.com/prathmeshxdev/pulse/internal/models"
 )
 
+const insertChunkSize = 100_000
+
 // InsertRawEvents batch-inserts into the given raw_events table (FQN, e.g.
-// "sony_liv.raw_events" or a staging table).
+// "sony_liv.raw_events" or a staging table). Sends in chunks so Cloud HTTP
+// inserts stay under max_execution_time.
 func InsertRawEvents(ctx context.Context, conn driver.Conn, table string, events []models.RawEvent) error {
 	if len(events) == 0 {
 		return nil
@@ -21,20 +24,29 @@ func InsertRawEvents(ctx context.Context, conn driver.Conn, table string, events
 		(video_session_id, user_id, content_id, event_type, event, event_timestamp,
 		 platform, app_version, country, audio_language, subtitle_language,
 		 player_version, session_start_epoch, properties)`, table)
-	batch, err := conn.PrepareBatch(ctx, stmt)
-	if err != nil {
-		return err
-	}
-	for _, e := range events {
-		if err := batch.Append(
-			e.VideoSessionID, e.UserID, e.ContentID, e.EventType, e.Event, e.EventTimestamp.UTC(),
-			e.Platform, e.AppVersion, e.Country, e.AudioLanguage, e.SubtitleLanguage,
-			e.PlayerVersion, e.SessionStartEpoch.UTC(), PropertiesColumn(e.Properties),
-		); err != nil {
+	for start := 0; start < len(events); start += insertChunkSize {
+		end := start + insertChunkSize
+		if end > len(events) {
+			end = len(events)
+		}
+		batch, err := conn.PrepareBatch(ctx, stmt)
+		if err != nil {
 			return err
 		}
+		for _, e := range events[start:end] {
+			if err := batch.Append(
+				e.VideoSessionID, e.UserID, e.ContentID, e.EventType, e.Event, e.EventTimestamp.UTC(),
+				e.Platform, e.AppVersion, e.Country, e.AudioLanguage, e.SubtitleLanguage,
+				e.PlayerVersion, e.SessionStartEpoch.UTC(), PropertiesColumn(e.Properties),
+			); err != nil {
+				return err
+			}
+		}
+		if err := batch.Send(); err != nil {
+			return fmt.Errorf("raw_events chunk [%d:%d]: %w", start, end, err)
+		}
 	}
-	return batch.Send()
+	return nil
 }
 
 // InsertContent batch-inserts into content_metadata (FQN).
@@ -42,12 +54,12 @@ func InsertContent(ctx context.Context, conn driver.Conn, table string, rows []m
 	if len(rows) == 0 {
 		return nil
 	}
-	batch, err := conn.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %s (content_id, title, video_type, category)", table))
+	batch, err := conn.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %s (content_id, title, video_type, category, show_name)", table))
 	if err != nil {
 		return err
 	}
 	for _, c := range rows {
-		if err := batch.Append(c.ContentID, c.Title, c.VideoType, c.Category); err != nil {
+		if err := batch.Append(c.ContentID, c.Title, c.VideoType, c.Category, c.ShowName); err != nil {
 			return err
 		}
 	}
@@ -64,21 +76,30 @@ func InsertSegments(ctx context.Context, conn driver.Conn, table string, segs []
 		(segment_id, video_session_id, user_id, content_id, platform, country,
 		 app_version, audio_language, subtitle_language, player_version,
 		 segment_start, segment_end, is_final, close_reason, version, properties)`, table)
-	batch, err := conn.PrepareBatch(ctx, stmt)
-	if err != nil {
-		return err
-	}
-	for _, s := range segs {
-		if err := batch.Append(
-			s.SegmentID, s.VideoSessionID, s.UserID, s.ContentID, s.Platform, s.Country,
-			s.AppVersion, s.AudioLanguage, s.SubtitleLanguage, s.PlayerVersion,
-			s.SegmentStart.UTC(), s.SegmentEnd.UTC(), s.IsFinal, s.CloseReason, s.Version,
-			PropertiesColumn(s.Properties),
-		); err != nil {
+	for start := 0; start < len(segs); start += insertChunkSize {
+		end := start + insertChunkSize
+		if end > len(segs) {
+			end = len(segs)
+		}
+		batch, err := conn.PrepareBatch(ctx, stmt)
+		if err != nil {
 			return err
 		}
+		for _, s := range segs[start:end] {
+			if err := batch.Append(
+				s.SegmentID, s.VideoSessionID, s.UserID, s.ContentID, s.Platform, s.Country,
+				s.AppVersion, s.AudioLanguage, s.SubtitleLanguage, s.PlayerVersion,
+				s.SegmentStart.UTC(), s.SegmentEnd.UTC(), s.IsFinal, s.CloseReason, s.Version,
+				PropertiesColumn(s.Properties),
+			); err != nil {
+				return err
+			}
+		}
+		if err := batch.Send(); err != nil {
+			return fmt.Errorf("segments chunk [%d:%d]: %w", start, end, err)
+		}
 	}
-	return batch.Send()
+	return nil
 }
 
 // InsertDeltas batch-inserts into the given minute_deltas table (FQN).
@@ -87,16 +108,25 @@ func InsertDeltas(ctx context.Context, conn driver.Conn, table string, rows []mo
 		return nil
 	}
 	stmt := fmt.Sprintf("INSERT INTO %s (minute, segment_id, delta)", table)
-	batch, err := conn.PrepareBatch(ctx, stmt)
-	if err != nil {
-		return err
-	}
-	for _, d := range rows {
-		if err := batch.Append(d.Minute.UTC(), d.SegmentID, d.Delta); err != nil {
+	for start := 0; start < len(rows); start += insertChunkSize {
+		end := start + insertChunkSize
+		if end > len(rows) {
+			end = len(rows)
+		}
+		batch, err := conn.PrepareBatch(ctx, stmt)
+		if err != nil {
 			return err
 		}
+		for _, d := range rows[start:end] {
+			if err := batch.Append(d.Minute.UTC(), d.SegmentID, d.Delta); err != nil {
+				return err
+			}
+		}
+		if err := batch.Send(); err != nil {
+			return fmt.Errorf("deltas chunk [%d:%d]: %w", start, end, err)
+		}
 	}
-	return batch.Send()
+	return nil
 }
 
 // InsertRollup batch-inserts wide deltas into concurrency_minute_serving (FQN).
@@ -107,17 +137,90 @@ func InsertRollup(ctx context.Context, conn driver.Conn, table string, rows []mo
 	stmt := fmt.Sprintf(`INSERT INTO %s
 		(minute, platform, country, content_id, app_version, audio_language,
 		 subtitle_language, player_version, delta)`, table)
-	batch, err := conn.PrepareBatch(ctx, stmt)
-	if err != nil {
-		return err
-	}
-	for _, d := range rows {
-		if err := batch.Append(d.Minute.UTC(), d.Platform, d.Country, d.ContentID, d.AppVersion,
-			d.AudioLanguage, d.SubtitleLanguage, d.PlayerVersion, d.Delta); err != nil {
+	for start := 0; start < len(rows); start += insertChunkSize {
+		end := start + insertChunkSize
+		if end > len(rows) {
+			end = len(rows)
+		}
+		batch, err := conn.PrepareBatch(ctx, stmt)
+		if err != nil {
 			return err
 		}
+		for _, d := range rows[start:end] {
+			if err := batch.Append(d.Minute.UTC(), d.Platform, d.Country, d.ContentID, d.AppVersion,
+				d.AudioLanguage, d.SubtitleLanguage, d.PlayerVersion, d.Delta); err != nil {
+				return err
+			}
+		}
+		if err := batch.Send(); err != nil {
+			return fmt.Errorf("rollup chunk [%d:%d]: %w", start, end, err)
+		}
 	}
-	return batch.Send()
+	return nil
+}
+
+// InsertUserSegments batch-inserts into user_active_segments (FQN).
+func InsertUserSegments(ctx context.Context, conn driver.Conn, table string, segs []models.UserSegment) error {
+	if len(segs) == 0 {
+		return nil
+	}
+	stmt := fmt.Sprintf(`INSERT INTO %s
+		(user_segment_id, user_id, content_id, platform, country,
+		 app_version, audio_language, subtitle_language, player_version,
+		 video_type, category,
+		 segment_start, segment_end, close_reason, version, properties)`, table)
+	for start := 0; start < len(segs); start += insertChunkSize {
+		end := start + insertChunkSize
+		if end > len(segs) {
+			end = len(segs)
+		}
+		batch, err := conn.PrepareBatch(ctx, stmt)
+		if err != nil {
+			return err
+		}
+		for _, s := range segs[start:end] {
+			if err := batch.Append(
+				s.UserSegmentID, s.UserID, s.ContentID, s.Platform, s.Country,
+				s.AppVersion, s.AudioLanguage, s.SubtitleLanguage, s.PlayerVersion,
+				s.VideoType, s.Category,
+				s.SegmentStart.UTC(), s.SegmentEnd.UTC(), s.CloseReason, s.Version,
+				PropertiesColumn(s.Properties),
+			); err != nil {
+				return err
+			}
+		}
+		if err := batch.Send(); err != nil {
+			return fmt.Errorf("user_segments chunk [%d:%d]: %w", start, end, err)
+		}
+	}
+	return nil
+}
+
+// InsertUserDeltas batch-inserts into user_minute_deltas (FQN).
+func InsertUserDeltas(ctx context.Context, conn driver.Conn, table string, rows []models.UserMinuteDelta) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	stmt := fmt.Sprintf("INSERT INTO %s (minute, user_segment_id, delta)", table)
+	for start := 0; start < len(rows); start += insertChunkSize {
+		end := start + insertChunkSize
+		if end > len(rows) {
+			end = len(rows)
+		}
+		batch, err := conn.PrepareBatch(ctx, stmt)
+		if err != nil {
+			return err
+		}
+		for _, d := range rows[start:end] {
+			if err := batch.Append(d.Minute.UTC(), d.UserSegmentID, d.Delta); err != nil {
+				return err
+			}
+		}
+		if err := batch.Send(); err != nil {
+			return fmt.Errorf("user_deltas chunk [%d:%d]: %w", start, end, err)
+		}
+	}
+	return nil
 }
 
 // StageAndReplace performs an atomic per-partition swap: it builds the new data

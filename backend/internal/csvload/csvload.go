@@ -122,7 +122,8 @@ func parsePropertyValue(s string) interface{} {
 	return s
 }
 
-// ReadContentCSV parses the content metadata CSV (content_id,title,video_type,category).
+// ReadContentCSV parses the content metadata CSV
+// (content_id,title,video_type,category[,show_name]).
 func ReadContentCSV(path string) ([]models.Content, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -144,6 +145,13 @@ func ReadContentCSV(path string) ([]models.Content, error) {
 			return nil, fmt.Errorf("missing column %s", k)
 		}
 	}
+	get := func(rec []string, k string) string {
+		i, ok := idx[k]
+		if !ok || i >= len(rec) {
+			return ""
+		}
+		return rec[i]
+	}
 	var out []models.Content
 	for {
 		rec, err := r.Read()
@@ -153,12 +161,13 @@ func ReadContentCSV(path string) ([]models.Content, error) {
 		if err != nil {
 			return nil, err
 		}
-		cid, _ := strconv.ParseUint(rec[idx["content_id"]], 10, 64)
+		cid, _ := strconv.ParseUint(get(rec, "content_id"), 10, 64)
 		out = append(out, models.Content{
 			ContentID: cid,
-			Title:     rec[idx["title"]],
-			VideoType: rec[idx["video_type"]],
-			Category:  rec[idx["category"]],
+			Title:     get(rec, "title"),
+			VideoType: get(rec, "video_type"),
+			Category:  get(rec, "category"),
+			ShowName:  get(rec, "show_name"),
 		})
 	}
 	return out, nil

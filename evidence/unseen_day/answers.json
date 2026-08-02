@@ -6,10 +6,23 @@
       "metric": "summary"
     },
     "query_id": "pulse-bench-0",
-    "peak": 2915,
-    "avg": 8.151682424100064,
+    "peak": 18968,
+    "avg": 0.562549651160793,
     "row_count": 1,
-    "latency_ms": 104.16
+    "latency_ms": 247.728
+  },
+  {
+    "case": {
+      "name": "unfiltered_minute_user",
+      "grain": "minute",
+      "metric": "summary",
+      "unit": "user"
+    },
+    "query_id": "pulse-bench-1",
+    "peak": 18418,
+    "avg": 0.5433710479749435,
+    "row_count": 1,
+    "latency_ms": 254.262
   },
   {
     "case": {
@@ -17,11 +30,11 @@
       "grain": "hour",
       "metric": "summary"
     },
-    "query_id": "pulse-bench-1",
-    "peak": 2915,
-    "avg": 8.151682424100064,
+    "query_id": "pulse-bench-2",
+    "peak": 18968,
+    "avg": 0.562549651160793,
     "row_count": 1,
-    "latency_ms": 92.83
+    "latency_ms": 258.257
   },
   {
     "case": {
@@ -29,11 +42,11 @@
       "grain": "day",
       "metric": "summary"
     },
-    "query_id": "pulse-bench-2",
-    "peak": 2915,
-    "avg": 8.151682424100064,
+    "query_id": "pulse-bench-3",
+    "peak": 18968,
+    "avg": 0.562549651160793,
     "row_count": 1,
-    "latency_ms": 98.759
+    "latency_ms": 249.484
   },
   {
     "case": {
@@ -48,11 +61,11 @@
         }
       ]
     },
-    "query_id": "pulse-bench-3",
-    "peak": 1862,
-    "avg": 5.419226026190616,
+    "query_id": "pulse-bench-4",
+    "peak": 6084,
+    "avg": 0.18022045855901594,
     "row_count": 1,
-    "latency_ms": 204.284
+    "latency_ms": 285.392
   },
   {
     "case": {
@@ -67,10 +80,10 @@
         }
       ]
     },
-    "query_id": "pulse-bench-4",
-    "peak": 2915,
-    "avg": 8.151682424100064,
+    "query_id": "pulse-bench-5",
+    "peak": 18968,
+    "avg": 0.562549651160793,
     "row_count": 1,
-    "latency_ms": 110.747
+    "latency_ms": 343.382
   }
 ]

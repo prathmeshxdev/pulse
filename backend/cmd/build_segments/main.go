@@ -15,6 +15,7 @@ import (
 	"github.com/prathmeshxdev/pulse/internal/models"
 	"github.com/prathmeshxdev/pulse/internal/otelx"
 	"github.com/prathmeshxdev/pulse/internal/segments"
+	"github.com/prathmeshxdev/pulse/internal/users"
 )
 
 // build_segments reads raw events (CSV or JSONL) and emits segments + deltas as JSONL.
@@ -94,7 +95,7 @@ func main() {
 		)
 		defer span.End()
 
-		if err := loadClickHouse(ctx, *dsn, cfg.Database, segs, drows, *rebuild); err != nil {
+		if err := loadClickHouse(ctx, *dsn, cfg.Database, segs, drows, *version, *rebuild); err != nil {
 			fmt.Fprintf(os.Stderr, "clickhouse load: %v\n", err)
 			os.Exit(1)
 		}
@@ -115,7 +116,7 @@ func main() {
 // load is idempotent AND never exposes an empty partition to concurrent queries.
 // With rebuild=false it appends (segments dedup by ReplacingMergeTree version;
 // deltas would double on a rerun — only use for genuinely new data).
-func loadClickHouse(ctx context.Context, dsn, database string, segs []models.Segment, drows []models.MinuteDelta, rebuild bool) error {
+func loadClickHouse(ctx context.Context, dsn, database string, segs []models.Segment, drows []models.MinuteDelta, version uint64, rebuild bool) error {
 	conn, err := chclient.Connect(ctx, dsn)
 	if err != nil {
 		return err
@@ -166,6 +167,9 @@ func loadClickHouse(ctx context.Context, dsn, database string, segs []models.Seg
 			return err
 		}
 		fmt.Printf("clickhouse: populated concurrency_minute_serving rollup (%d wide deltas)\n", len(wide))
+	}
+	if err := users.LoadClickHouse(ctx, conn, database, segs, version, rebuild); err != nil {
+		return fmt.Errorf("user concurrency: %w", err)
 	}
 	return nil
 }

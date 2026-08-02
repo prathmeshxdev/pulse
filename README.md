@@ -18,6 +18,8 @@ go run ./cmd/pipeline -dsn "$CLICKHOUSE_DSN" -migrations ../clickhouse/migration
 # 2. Load raw events + content, then build segments + deltas (idempotent)
 go run ./cmd/loadraw        -in ../hackathon-data/data/ch-hackathon-raw-data.csv -dsn "$CLICKHOUSE_DSN"
 go run ./cmd/build_segments -in ../hackathon-data/data/ch-hackathon-raw-data.csv -dsn "$CLICKHOUSE_DSN" -segments= -deltas=
+# User-level (session-independent) tables — also runs automatically at end of build_segments
+go run ./cmd/build_user_segments -dsn "$CLICKHOUSE_DSN" -config ../clickhouse/scripts/config.env
 #   (content: loadraw only handles raw_events; load content via clickhouse-client
 #    or the migration+INSERT in clickhouse/scripts/load_data.sh, then -reload-dict)
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 
 	"github.com/prathmeshxdev/pulse/internal/filters"
@@ -35,14 +36,42 @@ func FetchSessionEvents(ctx context.Context, conn driver.Conn, db string, sessio
 	var out []models.RawEvent
 	for rows.Next() {
 		var e models.RawEvent
-		var propsRaw any
+		var props clickhouse.JSON
 		if err := rows.Scan(&e.VideoSessionID, &e.UserID, &e.ContentID, &e.EventType, &e.Event,
 			&e.EventTimestamp, &e.Platform, &e.AppVersion, &e.Country, &e.AudioLanguage,
-			&e.SubtitleLanguage, &e.PlayerVersion, &e.SessionStartEpoch, &propsRaw); err != nil {
+			&e.SubtitleLanguage, &e.PlayerVersion, &e.SessionStartEpoch, &props); err != nil {
 			return nil, err
 		}
-		e.Properties = PropertiesFromJSON(propsRaw)
+		e.Properties = PropertiesFromJSON(&props)
 		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+// FetchAllSegments reads all session_active_segments (FINAL) for user-island rebuild.
+func FetchAllSegments(ctx context.Context, conn driver.Conn, db string) ([]models.Segment, error) {
+	sql := fmt.Sprintf(`SELECT segment_id, video_session_id, user_id, content_id, platform, country,
+		app_version, audio_language, subtitle_language, player_version,
+		video_type, category,
+		segment_start, segment_end, is_final, close_reason, version, properties
+		FROM %s.session_active_segments FINAL`, db)
+	rows, err := conn.Query(ctx, sql)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.Segment
+	for rows.Next() {
+		var s models.Segment
+		var props clickhouse.JSON
+		if err := rows.Scan(&s.SegmentID, &s.VideoSessionID, &s.UserID, &s.ContentID,
+			&s.Platform, &s.Country, &s.AppVersion, &s.AudioLanguage, &s.SubtitleLanguage,
+			&s.PlayerVersion, &s.VideoType, &s.Category,
+			&s.SegmentStart, &s.SegmentEnd, &s.IsFinal, &s.CloseReason, &s.Version, &props); err != nil {
+			return nil, err
+		}
+		s.Properties = PropertiesFromJSON(&props)
+		out = append(out, s)
 	}
 	return out, rows.Err()
 }

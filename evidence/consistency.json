@@ -1,0 +1,372 @@
+[
+  {
+    "name": "session_summary_peak_matches_timeseries",
+    "pass": true,
+    "detail": "summary peak 2915.0000 vs max(timeseries) 2915.0000"
+  },
+  {
+    "name": "session_summary_avg_matches_timeseries",
+    "pass": true,
+    "detail": "summary avg 8.1517 vs mean(timeseries) 8.1517"
+  },
+  {
+    "name": "session_breakdown_platform_ANDROID_PHONE_peak",
+    "pass": true,
+    "detail": "chart peak 1862.0000 vs breakdown 1862.0000"
+  },
+  {
+    "name": "session_breakdown_platform_ANDROID_PHONE_avg",
+    "pass": true,
+    "detail": "chart avg 5.4192 vs breakdown 5.4192"
+  },
+  {
+    "name": "session_breakdown_platform_IPHONE_peak",
+    "pass": true,
+    "detail": "chart peak 356.0000 vs breakdown 356.0000"
+  },
+  {
+    "name": "session_breakdown_platform_IPHONE_avg",
+    "pass": true,
+    "detail": "chart avg 0.9311 vs breakdown 0.9311"
+  },
+  {
+    "name": "session_breakdown_platform_SONY_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "chart peak 304.0000 vs breakdown 304.0000"
+  },
+  {
+    "name": "session_breakdown_platform_SONY_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.6911 vs breakdown 0.6911"
+  },
+  {
+    "name": "session_breakdown_platform_JIO_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "chart peak 226.0000 vs breakdown 226.0000"
+  },
+  {
+    "name": "session_breakdown_platform_JIO_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.5146 vs breakdown 0.5146"
+  },
+  {
+    "name": "session_breakdown_platform_Mweb_peak",
+    "pass": true,
+    "detail": "chart peak 73.0000 vs breakdown 73.0000"
+  },
+  {
+    "name": "session_breakdown_platform_Mweb_avg",
+    "pass": true,
+    "detail": "chart avg 0.1496 vs breakdown 0.1496"
+  },
+  {
+    "name": "session_breakdown_platform_SAMSUNG_HTML_TV_peak",
+    "pass": true,
+    "detail": "chart peak 71.0000 vs breakdown 71.0000"
+  },
+  {
+    "name": "session_breakdown_platform_SAMSUNG_HTML_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.1277 vs breakdown 0.1277"
+  },
+  {
+    "name": "session_breakdown_platform_LG_HTML_TV_peak",
+    "pass": true,
+    "detail": "chart peak 37.0000 vs breakdown 37.0000"
+  },
+  {
+    "name": "session_breakdown_platform_LG_HTML_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.0637 vs breakdown 0.0637"
+  },
+  {
+    "name": "session_breakdown_platform_ANDROID_TAB_peak",
+    "pass": true,
+    "detail": "chart peak 44.0000 vs breakdown 44.0000"
+  },
+  {
+    "name": "session_breakdown_platform_ANDROID_TAB_avg",
+    "pass": true,
+    "detail": "chart avg 0.0994 vs breakdown 0.0994"
+  },
+  {
+    "name": "session_breakdown_platform_XIAOMI_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "chart peak 46.0000 vs breakdown 46.0000"
+  },
+  {
+    "name": "session_breakdown_platform_XIAOMI_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.0867 vs breakdown 0.0867"
+  },
+  {
+    "name": "session_breakdown_platform_FIRE_TV_peak",
+    "pass": true,
+    "detail": "chart peak 39.0000 vs breakdown 39.0000"
+  },
+  {
+    "name": "session_breakdown_platform_FIRE_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.0686 vs breakdown 0.0686"
+  },
+  {
+    "name": "session_partition_sum_platform",
+    "pass": true,
+    "detail": "0/17029 minutes mismatch (worst delta 0.0000) — sum of platform slices vs unfiltered"
+  },
+  {
+    "name": "session_breakdown_country_india_peak",
+    "pass": true,
+    "detail": "chart peak 2915.0000 vs breakdown 2915.0000"
+  },
+  {
+    "name": "session_breakdown_country_india_avg",
+    "pass": true,
+    "detail": "chart avg 8.1517 vs breakdown 8.1517"
+  },
+  {
+    "name": "session_partition_sum_country",
+    "pass": true,
+    "detail": "0/17029 minutes mismatch (worst delta 0.0000) — sum of country slices vs unfiltered"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_ANDROID_PHONE",
+    "pass": true,
+    "detail": "filtered peak 1862.0000 \u003c= unfiltered 2915.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_IPHONE",
+    "pass": true,
+    "detail": "filtered peak 356.0000 \u003c= unfiltered 2915.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_SONY_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 304.0000 \u003c= unfiltered 2915.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_JIO_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 226.0000 \u003c= unfiltered 2915.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_Mweb",
+    "pass": true,
+    "detail": "filtered peak 73.0000 \u003c= unfiltered 2915.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_SAMSUNG_HTML_TV",
+    "pass": true,
+    "detail": "filtered peak 71.0000 \u003c= unfiltered 2915.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_LG_HTML_TV",
+    "pass": true,
+    "detail": "filtered peak 37.0000 \u003c= unfiltered 2915.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_ANDROID_TAB",
+    "pass": true,
+    "detail": "filtered peak 44.0000 \u003c= unfiltered 2915.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_XIAOMI_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 46.0000 \u003c= unfiltered 2915.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_platform_FIRE_TV",
+    "pass": true,
+    "detail": "filtered peak 39.0000 \u003c= unfiltered 2915.0000"
+  },
+  {
+    "name": "session_filtered_peak_le_total_country_india",
+    "pass": true,
+    "detail": "filtered peak 2915.0000 \u003c= unfiltered 2915.0000"
+  },
+  {
+    "name": "user_summary_peak_matches_timeseries",
+    "pass": true,
+    "detail": "summary peak 2854.0000 vs max(timeseries) 2854.0000"
+  },
+  {
+    "name": "user_summary_avg_matches_timeseries",
+    "pass": true,
+    "detail": "summary avg 7.9798 vs mean(timeseries) 7.9798"
+  },
+  {
+    "name": "user_breakdown_platform_ANDROID_PHONE_peak",
+    "pass": true,
+    "detail": "chart peak 1857.0000 vs breakdown 1857.0000"
+  },
+  {
+    "name": "user_breakdown_platform_ANDROID_PHONE_avg",
+    "pass": true,
+    "detail": "chart avg 5.4064 vs breakdown 5.4064"
+  },
+  {
+    "name": "user_breakdown_platform_IPHONE_peak",
+    "pass": true,
+    "detail": "chart peak 356.0000 vs breakdown 356.0000"
+  },
+  {
+    "name": "user_breakdown_platform_IPHONE_avg",
+    "pass": true,
+    "detail": "chart avg 0.9311 vs breakdown 0.9311"
+  },
+  {
+    "name": "user_breakdown_platform_SONY_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "chart peak 261.0000 vs breakdown 261.0000"
+  },
+  {
+    "name": "user_breakdown_platform_SONY_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.5647 vs breakdown 0.5647"
+  },
+  {
+    "name": "user_breakdown_platform_JIO_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "chart peak 225.0000 vs breakdown 225.0000"
+  },
+  {
+    "name": "user_breakdown_platform_JIO_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.5135 vs breakdown 0.5135"
+  },
+  {
+    "name": "user_breakdown_platform_Mweb_peak",
+    "pass": true,
+    "detail": "chart peak 73.0000 vs breakdown 73.0000"
+  },
+  {
+    "name": "user_breakdown_platform_Mweb_avg",
+    "pass": true,
+    "detail": "chart avg 0.1496 vs breakdown 0.1496"
+  },
+  {
+    "name": "user_breakdown_platform_SAMSUNG_HTML_TV_peak",
+    "pass": true,
+    "detail": "chart peak 71.0000 vs breakdown 71.0000"
+  },
+  {
+    "name": "user_breakdown_platform_SAMSUNG_HTML_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.1277 vs breakdown 0.1277"
+  },
+  {
+    "name": "user_breakdown_platform_LG_HTML_TV_peak",
+    "pass": true,
+    "detail": "chart peak 37.0000 vs breakdown 37.0000"
+  },
+  {
+    "name": "user_breakdown_platform_LG_HTML_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.0637 vs breakdown 0.0637"
+  },
+  {
+    "name": "user_breakdown_platform_ANDROID_TAB_peak",
+    "pass": true,
+    "detail": "chart peak 44.0000 vs breakdown 44.0000"
+  },
+  {
+    "name": "user_breakdown_platform_ANDROID_TAB_avg",
+    "pass": true,
+    "detail": "chart avg 0.0994 vs breakdown 0.0994"
+  },
+  {
+    "name": "user_breakdown_platform_XIAOMI_ANDROID_TV_peak",
+    "pass": true,
+    "detail": "chart peak 29.0000 vs breakdown 29.0000"
+  },
+  {
+    "name": "user_breakdown_platform_XIAOMI_ANDROID_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.0659 vs breakdown 0.0659"
+  },
+  {
+    "name": "user_breakdown_platform_FIRE_TV_peak",
+    "pass": true,
+    "detail": "chart peak 34.0000 vs breakdown 34.0000"
+  },
+  {
+    "name": "user_breakdown_platform_FIRE_TV_avg",
+    "pass": true,
+    "detail": "chart avg 0.0578 vs breakdown 0.0578"
+  },
+  {
+    "name": "user_partition_sum_platform",
+    "pass": true,
+    "detail": "0/17029 minutes mismatch (worst delta 0.0000) — sum of platform slices vs unfiltered"
+  },
+  {
+    "name": "user_breakdown_country_india_peak",
+    "pass": true,
+    "detail": "chart peak 2854.0000 vs breakdown 2854.0000"
+  },
+  {
+    "name": "user_breakdown_country_india_avg",
+    "pass": true,
+    "detail": "chart avg 7.9798 vs breakdown 7.9798"
+  },
+  {
+    "name": "user_partition_sum_country",
+    "pass": true,
+    "detail": "0/17029 minutes mismatch (worst delta 0.0000) — sum of country slices vs unfiltered"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_ANDROID_PHONE",
+    "pass": true,
+    "detail": "filtered peak 1857.0000 \u003c= unfiltered 2854.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_IPHONE",
+    "pass": true,
+    "detail": "filtered peak 356.0000 \u003c= unfiltered 2854.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_SONY_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 261.0000 \u003c= unfiltered 2854.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_JIO_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 225.0000 \u003c= unfiltered 2854.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_Mweb",
+    "pass": true,
+    "detail": "filtered peak 73.0000 \u003c= unfiltered 2854.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_SAMSUNG_HTML_TV",
+    "pass": true,
+    "detail": "filtered peak 71.0000 \u003c= unfiltered 2854.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_LG_HTML_TV",
+    "pass": true,
+    "detail": "filtered peak 37.0000 \u003c= unfiltered 2854.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_ANDROID_TAB",
+    "pass": true,
+    "detail": "filtered peak 44.0000 \u003c= unfiltered 2854.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_XIAOMI_ANDROID_TV",
+    "pass": true,
+    "detail": "filtered peak 29.0000 \u003c= unfiltered 2854.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_platform_FIRE_TV",
+    "pass": true,
+    "detail": "filtered peak 34.0000 \u003c= unfiltered 2854.0000"
+  },
+  {
+    "name": "user_filtered_peak_le_total_country_india",
+    "pass": true,
+    "detail": "filtered peak 2854.0000 \u003c= unfiltered 2854.0000"
+  }
+]

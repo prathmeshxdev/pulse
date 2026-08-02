@@ -28,12 +28,31 @@ const (
 	MetricSummary    Metric = "summary" // peak + avg
 )
 
+// CountUnit is the concurrency counting primitive (session-aware vs user-level).
+type CountUnit string
+
+const (
+	UnitSession CountUnit = "session" // video_session_id — default
+	UnitUser    CountUnit = "user"    // merged user_id islands — session-independent
+)
+
+// ParseCountUnit normalizes API/bench/config values.
+func ParseCountUnit(s string) CountUnit {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "user", "user_id":
+		return UnitUser
+	default:
+		return UnitSession
+	}
+}
+
 // Request is the POST /api/v1/concurrency/chart body.
 type Request struct {
-	Start   time.Time       `json:"start"`
-	End     time.Time       `json:"end"`
-	Grain   Grain           `json:"grain"`
-	Metric  Metric          `json:"metric"`
+	Start   time.Time        `json:"start"`
+	End     time.Time        `json:"end"`
+	Grain   Grain            `json:"grain"`
+	Metric  Metric           `json:"metric"`
+	Unit    CountUnit        `json:"unit,omitempty"`
 	Filters []filters.Filter `json:"filters"`
 }
 
@@ -64,6 +83,11 @@ func BuildChartQuery(req Request, database string, maxSegmentSpanHours int, prop
 	if maxSegmentSpanHours <= 0 {
 		maxSegmentSpanHours = 72
 	}
+	unit := req.Unit
+	if unit == "" {
+		unit = UnitSession
+	}
+	segTable, deltaTable, idCol := tablesFor(unit)
 
 	preds, hasFilters, err := filters.BuildSegmentPredicates(req.Filters, database, propTypes)
 	if err != nil {
@@ -92,48 +116,34 @@ func BuildChartQuery(req Request, database string, maxSegmentSpanHours int, prop
 		}
 		selWhere = append(selWhere, preds...)
 		selSQL := fmt.Sprintf(
-			"SELECT segment_id\nFROM %s.session_active_segments FINAL\nWHERE %s",
-			database, strings.Join(selWhere, "\n  AND "),
+			"SELECT %s\nFROM %s.%s FINAL\nWHERE %s",
+			idCol, database, segTable, strings.Join(selWhere, "\n  AND "),
 		)
 		b.WithRaw("sel", selSQL)
-		segIN = "AND segment_id IN (SELECT segment_id FROM sel)"
+		segIN = fmt.Sprintf("AND %s IN (SELECT %s FROM sel)", idCol, idCol)
 	}
 
-	// open_edges folds still-open sessions into the same +1/-1 minute-edge
-	// scheme deltas.EmitAnyOverlap already uses for closed segments, so a
-	// currently-open session counts immediately instead of only after it
-	// closes and flushes to minute_deltas (streamd only writes a delta pair
-	// on close — see cmd/streamd). Filters apply directly here (typed
-	// columns on session_active_segments, same preds as `sel` above) —
-	// dimension support falls out for free, no separate mechanism needed.
-	//
-	// Filtered by close_reason = '', NOT is_final = 0: is_final only means
-	// "the whole session ended via VideoSessionEnd" (SCHEMA_AND_DDL.md); a
-	// segment closed for any other reason (pause/background/buffer/
-	// heartbeat-gap) is ALSO is_final=0 and is already correctly represented
-	// in minute_deltas from its own close. Filtering on is_final=0 here
-	// would double-count every ordinary close. streamd's OpenSnapshot is the
-	// only writer that leaves close_reason empty (see internal/livestate and
-	// internal/segments.Accumulator.OpenSnapshot) — every real close sets one
-	// of the CloseReason* constants, all non-empty.
-	//
-	// The minus-edge mirrors EmitAnyOverlap's exact rounding
-	// (StartOfMinute(end-1ms)+1min, not StartOfMinute(end)) — getting this
-	// even slightly off silently shifts sessions into the wrong minute.
-	// Validated against the full real dataset (differential test against an
-	// in-memory Accumulator replay, both global and dimension-filtered):
-	// exact on every check except two explained by a pre-existing 72h
-	// lookback-boundary artifact in the opening-balance calc below,
-	// unrelated to this CTE (a closed segment's edge pair straddling the
-	// lookback loses its start-side +1 — same behavior with or without this
-	// CTE, just usually invisible at normal query granularity).
 	openWhere := []string{
 		fmt.Sprintf("segment_end > %s - %s", rangeStart, lookback),
 		fmt.Sprintf("segment_start < %s", rangeEnd),
 	}
 	openWhere = append(openWhere, preds...)
 	openWhereSQL := strings.Join(openWhere, "\n    AND ")
-	b.WithRaw("open_edges", fmt.Sprintf(`SELECT toStartOfMinute(segment_start) AS minute, 1 AS delta
+
+	if unit == UnitUser {
+		b.WithRaw("open_edges", fmt.Sprintf(`SELECT toStartOfMinute(min(segment_start)) AS minute, 1 AS delta
+FROM %[1]s.session_active_segments FINAL
+WHERE close_reason = ''
+    AND %[2]s
+GROUP BY user_id
+UNION ALL
+SELECT toStartOfMinute(subtractMilliseconds(max(segment_end), 1)) + toIntervalMinute(1) AS minute, -1 AS delta
+FROM %[1]s.session_active_segments FINAL
+WHERE close_reason = ''
+    AND %[2]s
+GROUP BY user_id`, database, openWhereSQL))
+	} else {
+		b.WithRaw("open_edges", fmt.Sprintf(`SELECT toStartOfMinute(segment_start) AS minute, 1 AS delta
 FROM %[1]s.session_active_segments FINAL
 WHERE close_reason = ''
     AND %[2]s
@@ -142,26 +152,27 @@ SELECT toStartOfMinute(subtractMilliseconds(segment_end, 1)) + toIntervalMinute(
 FROM %[1]s.session_active_segments FINAL
 WHERE close_reason = ''
     AND %[2]s`, database, openWhereSQL))
+	}
 
 	openingSQL := fmt.Sprintf(`SELECT sum(delta) AS c0 FROM (
-    SELECT delta FROM %[1]s.minute_deltas
-    WHERE minute >= %[2]s - %[3]s AND minute < %[2]s
-    %[4]s
+    SELECT delta FROM %[1]s.%[2]s
+    WHERE minute >= %[3]s - %[4]s AND minute < %[3]s
+    %[5]s
     UNION ALL
     SELECT delta FROM open_edges
-    WHERE minute >= %[2]s - %[3]s AND minute < %[2]s
-)`, database, rangeStart, lookback, segIN)
+    WHERE minute >= %[3]s - %[4]s AND minute < %[3]s
+)`, database, deltaTable, rangeStart, lookback, segIN)
 	b.WithRaw("opening", openingSQL)
 
 	netSQL := fmt.Sprintf(`SELECT minute, sum(delta) AS net FROM (
-    SELECT minute, delta FROM %[1]s.minute_deltas
-    WHERE minute >= %[2]s AND minute < %[3]s
-    %[4]s
+    SELECT minute, delta FROM %[1]s.%[2]s
+    WHERE minute >= %[3]s AND minute < %[4]s
+    %[5]s
     UNION ALL
     SELECT minute, delta FROM open_edges
-    WHERE minute >= %[2]s AND minute < %[3]s
+    WHERE minute >= %[3]s AND minute < %[4]s
 )
-GROUP BY minute`, database, rangeStart, rangeEnd, segIN)
+GROUP BY minute`, database, deltaTable, rangeStart, rangeEnd, segIN)
 	b.WithRaw("net", netSQL)
 
 	b.WithRaw("grid", fmt.Sprintf(`SELECT %s + toIntervalMinute(number) AS minute
@@ -177,8 +188,21 @@ LEFT JOIN net AS n ON g.minute = n.minute`)
 	applyMetric(b, req)
 	return Query{
 		SQL:      b.Build(),
-		CacheKey: cacheKey(req, database, maxSegmentSpanHours),
+		CacheKey: cacheKey(req, database, maxSegmentSpanHours, unit),
 	}, nil
+}
+
+func tablesFor(unit CountUnit) (segTable, deltaTable, idCol string) {
+	if unit == UnitUser {
+		return "user_active_segments", "user_minute_deltas", "user_segment_id"
+	}
+	return "session_active_segments", "minute_deltas", "segment_id"
+}
+
+// SegmentTable returns the serving segment table for the counting unit.
+func SegmentTable(unit CountUnit) string {
+	t, _, _ := tablesFor(unit)
+	return t
 }
 
 // applyMetric adds the final SELECT over the `curve` CTE for the requested
@@ -269,17 +293,18 @@ FROM grid AS g
 LEFT JOIN net AS n ON g.minute = n.minute`)
 
 	applyMetric(b, req)
-	return Query{SQL: b.Build(), CacheKey: "rollup|" + cacheKey(req, database, maxSegmentSpanHours)}, nil
+	return Query{SQL: b.Build(), CacheKey: "rollup|" + cacheKey(req, database, maxSegmentSpanHours, UnitSession)}, nil
 }
 
 func formatDT(t time.Time) string {
 	return "'" + t.UTC().Format("2006-01-02 15:04:05") + "'"
 }
 
-func cacheKey(req Request, database string, span int) string {
+func cacheKey(req Request, database string, span int, unit CountUnit) string {
 	var b strings.Builder
 	b.WriteString(database)
 	b.WriteByte('|')
+	b.WriteString(string(unit))
 	b.WriteString(req.Start.UTC().Format(time.RFC3339))
 	b.WriteByte('|')
 	b.WriteString(req.End.UTC().Format(time.RFC3339))

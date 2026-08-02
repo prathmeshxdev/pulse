@@ -26,6 +26,21 @@ func TestReadCSV_ExtraColumnsGoToProperties(t *testing.T) {
 	assert.Equal(t, "ANDROID", events[0].Platform)
 }
 
+func TestReadContentCSV_ShowName(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "content.csv")
+	csv := "content_id,title,video_type,category,show_name\n" +
+		"20988414,morar faf,vod,bffff,fkcbb\n"
+	require.NoError(t, os.WriteFile(path, []byte(csv), 0o644))
+
+	rows, err := csvload.ReadContentCSV(path)
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+	assert.Equal(t, uint64(20988414), rows[0].ContentID)
+	assert.Equal(t, "fkcbb", rows[0].ShowName)
+	assert.Equal(t, "vod", rows[0].VideoType)
+}
+
 func TestReadCSV_KnownColumnsNotDuplicatedInProperties(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "events.csv")
