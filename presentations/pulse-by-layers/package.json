@@ -4,11 +4,12 @@
   "scripts": {
     "dev": "slidev --open --port 3032 slides.md",
     "build": "slidev build slides.md --out dist",
-    "export": "slidev export slides.md"
+    "export": "slidev export slides.md --format pdf --output pulse-by-layers.pdf --timeout 60000"
   },
   "devDependencies": {
     "@slidev/cli": "^52.16.0",
     "@slidev/theme-default": "^0.25.0",
-    "@vueuse/motion": "^3.0.3"
+    "@vueuse/motion": "^3.0.3",
+    "playwright-chromium": "^1.62.1"
   }
 }

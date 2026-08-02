@@ -95,6 +95,41 @@ Full filter → dataset column map: [README § Dataset filters](README.md#datase
 
 ---
 
+## Design choices
+
+### Why pulse MCP (custom MCP)
+
+The official ClickHouse MCP server exposes read-only SQL against serving tables. That
+is useful for exploration, but ad-hoc SQL is **not** the same program as the dashboard:
+hand-written queries can mis-count concurrency (wrong grain, missing `open_edges`,
+filter predicates on widened delta rows, session vs user unit confusion).
+
+**pulse MCP** ([`librechat/pulse-mcp/`](librechat/pulse-mcp/)) is a thin SSE proxy to
+`POST /api/v1/concurrency/chart` and `/concurrency/breakdown` — the same Go compiler
+the React UI and benchmark runner use. LibreChat agents get peak, average, timeseries,
+and breakdown numbers that **match the product** without reimplementing the query template.
+
+ClickHouse MCP remains available for schema inspection; the agent system prompt
+([`librechat/system_prompt.md`](librechat/system_prompt.md)) prioritizes pulse MCP for
+numeric answers.
+
+### Why JSON `properties` on `session_active_segments`
+
+Typed columns cover stable, high-cardinality event dimensions (`platform`, `country`, …)
+and content attributes join through `content_dict`. The unseen evaluation dataset adds
+fields such as `video_resolution` that were not in the original DDL.
+
+A **`properties` JSON** column on `session_active_segments` (migration `010`) lets
+unknown CSV columns land at ingest **without a migration per new key**. Values are
+snapshotted at segment start (R10). A refreshable materialized view
+(`properties_key_mappings`) catalogs keys and ClickHouse-inferred types so filters
+compile to typed JSON paths — the same `ResolveDimension` path as segment and dict dims.
+
+Content-level fields that must join on `content_id` (e.g. `show_name`) still get typed
+DDL and dictionary updates when the schema is known upfront (`013_show_name.sql`).
+
+---
+
 ## Observability
 
 | Tool | Role | Wiring |
@@ -122,6 +157,6 @@ Trust artifacts: invariants, delta-vs-explosion cross-check, sensitivity matrix
 
 ## Deliberately not built
 
-Kafka workers, custom MCP that reimplements the query compiler, and a separate
+Kafka workers, a second MCP that reimplements the query compiler, and a separate
 metadata registry service. Scaling argument for 100× is analytical (see deck),
 not a stopwatch on a cache-fitting training set.

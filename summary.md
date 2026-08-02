@@ -16,10 +16,6 @@ Raw playback events are noisy: users background the app, pause, buffer, or leave
 
 **Observability.** ClickStack (OTLP collector → ClickHouse Cloud `otel_*`) traces API and pipeline work. Optional Langfuse traces LLM generations when LibreChat routes through a local LiteLLM proxy with callbacks.
 
-## Why it is trustworthy
-
-At ~10,866 sessions the dataset fits in cache; the differentiator is **correctness**, not latency bragging. Pulse ships automated invariants, a delta-versus-minute-explosion cross-check, hand-computed fixtures, benchmark evidence (`answers.json`, query logs), and a read-only MCP user that cannot read `raw_events` or mutate data. Locked rules R1–R10 live in `clickhouse/scripts/config.env`; measured sensitivities are in `evidence/sensitivity.md`.
-
 ## Assumptions and limits
 
 ### Lookback period (`MAX_SEGMENT_SPAN_HOURS = 72`)
@@ -67,7 +63,7 @@ Every parameter flip is explainable: one line in `config.env` plus a measured de
 
 ## What we deliberately did not build
 
-Kafka streaming workers and a separate metadata registry appear on the high-level diagram as future paths; today the backend reads `properties_key_mappings` directly. A custom MCP proxy that forces API-parity queries is documented but not required for the hackathon demo.
+Kafka streaming workers and a separate metadata registry appear on the high-level diagram as future paths; today the backend reads `properties_key_mappings` directly. **pulse MCP** ships for API-parity chat answers; ClickHouse MCP remains for read-only SQL exploration.
 
 ## Integrations
 

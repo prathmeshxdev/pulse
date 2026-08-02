@@ -42,6 +42,11 @@ All dataset content is **synthetic**. No real customer data or PII.
 
 **[Live dashboard](YOUR_HOSTED_DEMO_URL)**
 
+![Pulse dashboard — concurrency curve with peak and average](presentations/pulse-by-layers/public/dashboard.png)
+
+*Peak `18,968` and average `293.4` foreground-active concurrency, minute grain,
+exact from the serving query — no sampling.*
+
 The hosted demo shows:
 
 - Full-window concurrency curve with peaks and ramps
@@ -68,7 +73,8 @@ See [`Architecture.md`](./Architecture.md) for the full write-up.
 Slide deck: [`presentations/pulse-by-layers/`](presentations/pulse-by-layers/) ·
 deeper narrative: [`summary.md`](./summary.md).
 
-**Pitch deck (PDF):** exported from the Slidev deck — `presentations/pulse-by-layers/` (`npx slidev export --format pdf`).
+**Pitch deck (PDF):** [`presentations/pulse-by-layers/pulse-by-layers.pdf`](presentations/pulse-by-layers/pulse-by-layers.pdf) —
+15 slides, exported from the Slidev deck (`npm run export`).
 
 ## How to run it
 
@@ -170,6 +176,11 @@ LLM generations and tool calls for analytics questions.
 
 ### LibreChat
 
+![LibreChat answering a concurrency question via pulse MCP](presentations/pulse-by-layers/public/librechat-chat.png)
+
+*“Which category performed best yesterday?” → 3 pulse MCP tool calls
+(`schema_window`, `schema_dimensions`, `concurrency_breakdown`) → API-parity answer.*
+
 - Config: [`librechat/librechat.yaml`](librechat/librechat.yaml)
 - Pulse MCP (chart/breakdown API): [`librechat/pulse-mcp/`](librechat/pulse-mcp/)
 - Agent prompt: [`librechat/system_prompt.md`](librechat/system_prompt.md)
@@ -187,6 +198,8 @@ Output from the sealed evaluation dataset pipeline:
 | Consistency | [`evidence/unseen_day/consistency.json`](evidence/unseen_day/consistency.json) |
 | Invariants / sensitivity | [`evidence/unseen_day/`](evidence/unseen_day/) |
 | Query log / parts | `query_log.json`, `parts.json` |
+| Screenshots (dashboard, LibreChat, ClickStack, ClickHouse, HLD) | [`evidence/screenshots/`](evidence/screenshots/) |
+| Langfuse traces (raw export) | [`evidence/langfuse_traces.json`](evidence/langfuse_traces.json) |
 
 Pipeline: `./clickhouse/scripts/unseen_day.sh <raw.csv> <content.csv>` ([`RUN.md`](./RUN.md)).
 

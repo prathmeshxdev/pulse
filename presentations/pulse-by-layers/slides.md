@@ -8,7 +8,7 @@ highlighter: shiki
 lineNumbers: false
 drawings:
   persist: false
-transition: fade
+transition: none
 mdc: true
 colorSchema: dark
 fonts:
@@ -31,13 +31,7 @@ canvasWidth: 1080
   padding: 3rem 3.5rem !important;
 }
 .slidev-layout strong { color: var(--rm-coral); }
-.bg-glow { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
-.bg-glow::before {
-  content: ''; position: absolute; top: -20%; right: -10%;
-  width: 55vw; height: 55vw;
-  background: radial-gradient(circle, rgba(244,132,95,0.12) 0%, transparent 60%);
-  filter: blur(40px);
-}
+.bg-glow { display: none; }
 .title-stack {
   position: relative; z-index: 1; height: 100%;
   display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left;
@@ -48,8 +42,7 @@ canvasWidth: 1080
 }
 .title-main {
   font-size: 6.5rem; font-weight: 800; letter-spacing: -0.04em; line-height: 0.95; margin: 0;
-  background: linear-gradient(135deg, #FFD166 0%, #06D6A0 100%);
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  color: var(--rm-gold);
 }
 .title-sub { font-size: 1.45rem; color: var(--rm-text); margin-top: 1rem; max-width: 44ch; line-height: 1.35; }
 .title-rule { width: 4rem; height: 2px; background: var(--rm-coral); margin: 1.75rem 0; }
@@ -78,8 +71,6 @@ Dashboard · API · LibreChat · ClickStack · Langfuse
 </div>
 
 ---
-transition: fade
----
 
 <div class="bg-glow"></div>
 
@@ -88,10 +79,10 @@ transition: fade
   <div class="pl-sub">Sony LIV · what “concurrent viewers” must mean</div>
   <div class="pl-body">
     <div class="pl-stat-row">
-      <div class="pl-stat"><div class="val">905K</div><div class="lbl">raw events</div></div>
-      <div class="pl-stat"><div class="val">10.9K</div><div class="lbl">sessions</div></div>
-      <div class="pl-stat"><div class="val">~10⁵</div><div class="lbl">delta rows</div></div>
-      <div class="pl-stat"><div class="val">20.9K</div><div class="lbl">pause windows</div></div>
+      <div class="pl-stat"><div class="val">7.0M</div><div class="lbl">raw events</div></div>
+      <div class="pl-stat"><div class="val">148K</div><div class="lbl">active segments</div></div>
+      <div class="pl-stat"><div class="val">~3×10⁵</div><div class="lbl">delta rows</div></div>
+      <div class="pl-stat"><div class="val">6.7M</div><div class="lbl">heartbeats</div></div>
     </div>
     <div class="pl-cols">
       <div class="pl-panel">
@@ -122,8 +113,6 @@ transition: fade
 </div>
 
 ---
-transition: fade
----
 
 <div class="bg-glow"></div>
 
@@ -143,8 +132,6 @@ transition: fade
   </div>
 </div>
 
----
-transition: fade
 ---
 
 <div class="bg-glow"></div>
@@ -186,79 +173,45 @@ transition: fade
 </div>
 
 ---
-transition: fade
----
 
 <div class="bg-glow"></div>
 
 <div class="pl-stage">
-  <h2 class="pl-title">Layer 01 · What lands in ClickHouse</h2>
-  <div class="pl-sub">Serving tables the query layer reads</div>
+  <h2 class="pl-title">Layer 01 · Tables &amp; correction</h2>
+  <div class="pl-sub">Serving tables · compacted history · live open sessions</div>
   <div class="pl-body">
     <div class="pl-cols">
       <div class="pl-panel">
-        <h3>Derived tables (query path)</h3>
+        <h3>Serving tables</h3>
         <ul>
-          <li><code>session_active_segments</code> — typed dimensions + JSON properties per active interval</li>
-          <li><code>minute_deltas</code> — narrow <code>(minute, segment_id, ±1)</code> for the concurrency curve</li>
-          <li><code>content_dict</code> — title, video_type, category lookups</li>
-          <li><code>properties_key_mappings</code> — refreshable MV catalog for dynamic filter keys</li>
+          <li><code>session_active_segments</code> — typed dims + JSON <code>properties</code></li>
+          <li><code>minute_deltas</code> — narrow <code>(minute, segment_id, ±1)</code></li>
+          <li><code>content_dict</code> · <code>properties_key_mappings</code> MV</li>
+        </ul>
+        <h3 class="pl-h3-mt">① Compacted (historical)</h3>
+        <ul>
+          <li>Finished intervals → merged <code>±1</code> in <code>minute_deltas</code></li>
+          <li>SummingMergeTree · opening balance + cumulative sum</li>
         </ul>
       </div>
       <div class="pl-panel">
         <h3>Why two physical shapes</h3>
         <ul>
-          <li><strong>Closed history</strong> → compacted into <code>minute_deltas</code> (SummingMergeTree merges edges)</li>
-          <li><strong>Open sessions</strong> → live rows in <code>session_active_segments</code> until the interval ends</li>
-          <li>Workers only emit delta pairs on <em>close</em> — avoids double-counting partial intervals</li>
-          <li><code>session_live_state</code> MV — optional argMax gauge for “active now” from the event stream</li>
+          <li><strong>Closed</strong> → compacted into <code>minute_deltas</code></li>
+          <li><strong>Open</strong> → live rows in <code>session_active_segments</code></li>
+          <li>Workers emit deltas only on <em>close</em></li>
+        </ul>
+        <h3 class="pl-h3-mt">② Live correction</h3>
+        <ul>
+          <li>Open sessions: <code>close_reason = ''</code> — not yet in deltas</li>
+          <li><strong>open_edges</strong> CTE synthesizes <code>+1/−1</code> from live rows</li>
+          <li><code>UNION ALL</code> with compacted deltas — one curve, filters on both</li>
         </ul>
       </div>
     </div>
   </div>
 </div>
 
----
-transition: fade
----
-
-<div class="bg-glow"></div>
-
-<div class="pl-stage">
-  <h2 class="pl-title">Layer 01 · Compacted + live correction</h2>
-  <div class="pl-sub">Two states on one curve — no waiting for sessions to close</div>
-  <div class="pl-body">
-    <div class="pl-cols">
-      <div class="pl-panel">
-        <h3>① Compacted state (historical)</h3>
-        <ul>
-          <li><code>minute_deltas</code> holds merged <code>±1</code> edges for <strong>finished</strong> active intervals</li>
-          <li>SummingMergeTree background merge collapses duplicate keys — cheap scans at query time</li>
-          <li>Opening balance + cumulative sum → minute concurrency curve</li>
-          <li>This is the durable, compacted path for all closed viewing time</li>
-        </ul>
-        <div class="pl-chip-row">
-          <span class="pl-chip">SummingMergeTree</span>
-        </div>
-      </div>
-      <div class="pl-panel">
-        <h3>② Live correction (incomplete sessions)</h3>
-        <ul>
-          <li>Still-watching sessions stay in <code>session_active_segments</code> with <code>close_reason = ''</code></li>
-          <li>Not yet in <code>minute_deltas</code> — would miss “active now” if we stopped there</li>
-          <li>Chart query <strong>open_edges</strong> CTE: synthesize matching <code>+1/−1</code> from live rows</li>
-          <li><code>UNION ALL</code> with compacted deltas → same cumulative curve, filters apply to both</li>
-        </ul>
-        <div class="pl-callout">
-          One query template merges both states — compacted history plus live open sessions as a correction layer.
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
----
-transition: fade
 ---
 
 <div class="bg-glow"></div>
@@ -297,8 +250,6 @@ transition: fade
   </div>
 </div>
 
----
-transition: fade
 ---
 
 <div class="bg-glow"></div>
@@ -340,8 +291,6 @@ transition: fade
 </div>
 
 ---
-transition: fade
----
 
 <div class="bg-glow"></div>
 
@@ -349,36 +298,36 @@ transition: fade
   <h2 class="pl-title">Layer 03 · Dashboard &amp; demo</h2>
   <div class="pl-sub">Minimal UI — model and serving layer are the score, not polish</div>
   <div class="pl-body">
-    <div class="pl-cols">
+    <div class="pl-cols pl-cols-3">
       <div class="pl-panel">
         <h3>React dashboard</h3>
         <ul>
           <li>Peak / average cards + minute timeseries (Recharts)</li>
-          <li>Grain toggle: minute · hour · day — same API contract</li>
-          <li>Dimension filters + dynamic <code>properties.*</code> from schema API</li>
-          <li>Breakdown table — top-N by content, platform, country</li>
-          <li>Preflight cache → sub-second repeat queries on hot windows</li>
+          <li>Grain toggle: minute · hour · day</li>
+          <li>Dimension filters + dynamic <code>properties.*</code></li>
+          <li>Breakdown table — top-N by dimension</li>
         </ul>
       </div>
       <div class="pl-panel">
-        <h3>Live replay &amp; incremental proof</h3>
+        <h3>Live replay &amp; incremental</h3>
         <ul>
-          <li><strong>Replay view</strong> — animates the minute curve point-by-point for demo UX</li>
-          <li><strong>streamd</strong> — replays CSV as a live stream → Redis → CH on segment close</li>
-          <li><code>clickhouse/scripts/replay.sh</code> — watermark split, reconcile tail, before/after bench</li>
-          <li><code>/api/v1/concurrency/live</code> — Redis gauge + CH curve union</li>
-          <li>Judges see freshness without waiting for full rebuild</li>
+          <li><strong>Replay view</strong> — animates the minute curve live</li>
+          <li><strong>streamd</strong> — CSV → Redis → CH on segment close</li>
+          <li><code>/api/v1/concurrency/live</code> — Redis gauge + CH union</li>
         </ul>
-        <div class="pl-callout">
-          Problem statement: polished frontends are out of scope — we ship enough UI to exercise the serving layer honestly.
+      </div>
+      <div class="pl-panel pl-panel-img">
+        <div class="pl-panel-img-frame">
+          <img src="/dashboard.png" alt="Pulse dashboard — concurrency curve with peak and average" />
+        </div>
+        <div class="pl-panel-img-caption">
+          <strong>peak 18,968</strong> · avg 293.4 · minute grain, exact from serving query
         </div>
       </div>
     </div>
   </div>
 </div>
 
----
-transition: fade
 ---
 
 <div class="bg-glow"></div>
@@ -387,33 +336,36 @@ transition: fade
   <h2 class="pl-title">Layer 03 · LibreChat + MCP</h2>
   <div class="pl-sub">Second consumer of the serving layer (dotted path on HLD)</div>
   <div class="pl-body">
-    <div class="pl-cols">
+    <div class="pl-cols pl-cols-3">
       <div class="pl-panel">
         <h3>What we built</h3>
         <ul>
           <li>LibreChat + official <strong>ClickHouse MCP</strong> (SSE)</li>
-          <li>Read-only user <code>pulse_readonly</code> — no <code>raw_events</code>, no writes</li>
-          <li><code>system_prompt.md</code> — serving tables, semantics, example SQL</li>
-          <li>Compose profile <code>chat</code> — MongoDB + MCP + LiteLLM endpoint</li>
+          <li>Read-only user <code>pulse_readonly</code> — no writes</li>
+          <li><code>system_prompt.md</code> — serving tables + semantics</li>
+          <li>Compose profile <code>chat</code> — Mongo + MCP + LiteLLM</li>
         </ul>
       </div>
       <div class="pl-panel">
         <h3>Honest limits</h3>
         <ul>
-          <li><strong>pulse MCP</strong> proxies the chart/breakdown API — same compiler as the dashboard</li>
-          <li>Optional ClickHouse MCP for schema inspection only — not for concurrency numbers</li>
-          <li>Metadata for dynamic keys: <code>schema_dimensions</code> tool or <code>properties_key_mappings</code></li>
+          <li><strong>pulse MCP</strong> proxies chart/breakdown — same compiler as the dashboard</li>
+          <li>ClickHouse MCP: schema inspection only, not concurrency numbers</li>
+          <li>Dynamic keys: <code>schema_dimensions</code> / <code>properties_key_mappings</code></li>
         </ul>
-        <div class="pl-callout">
-          Example: <em>“Peak concurrency on ANDROID_PHONE between 13:00–14:00 UTC?”</em> → <code>pulse</code> MCP → <code>/api/v1/concurrency/chart</code>.
+      </div>
+      <div class="pl-panel pl-panel-img">
+        <div class="pl-panel-img-frame">
+          <img src="/librechat-chat.png" alt="LibreChat chat answering a concurrency question via pulse MCP tool calls" />
+        </div>
+        <div class="pl-panel-img-caption">
+          “Which category performed best yesterday?” → <strong>3 pulse MCP tool calls</strong>
         </div>
       </div>
     </div>
   </div>
 </div>
 
----
-transition: fade
 ---
 
 <div class="bg-glow"></div>
@@ -453,8 +405,6 @@ transition: fade
 </div>
 
 ---
-transition: fade
----
 
 <div class="bg-glow"></div>
 
@@ -463,8 +413,8 @@ transition: fade
   <div class="pl-sub">Interpretation A — 100× sessions in the same 12-day window (live-event density)</div>
   <div class="pl-body">
     <div class="pl-stat-row">
-      <div class="pl-stat"><div class="val">~10⁷</div><div class="lbl">delta rows</div></div>
-      <div class="pl-stat"><div class="val">~420K</div><div class="lbl">segments / day</div></div>
+      <div class="pl-stat"><div class="val">~3×10⁷</div><div class="lbl">delta rows</div></div>
+      <div class="pl-stat"><div class="val">~1.9M</div><div class="lbl">segments / day</div></div>
       <div class="pl-stat"><div class="val">&lt;1 GB</div><div class="lbl">serving layer</div></div>
       <div class="pl-stat"><div class="val">50–150 ms</div><div class="lbl">filtered day query</div></div>
     </div>
@@ -495,8 +445,6 @@ transition: fade
   </div>
 </div>
 
----
-transition: fade
 ---
 
 <div class="bg-glow"></div>
@@ -557,8 +505,6 @@ transition: fade
 </div>
 
 ---
-transition: fade
----
 
 <div class="bg-glow"></div>
 
@@ -599,8 +545,6 @@ transition: fade
   </div>
 </div>
 
----
-transition: fade
 ---
 
 <div class="bg-glow"></div>

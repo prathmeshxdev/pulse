@@ -13,16 +13,25 @@ npm run dev         # http://localhost:3032
 
 ## Contents
 
+15 slides total. PDF export committed at
+[`pulse-by-layers.pdf`](pulse-by-layers.pdf).
+
 | # | Slide |
 |---|--------|
 | 1 | Title |
-| 2–3 | Problem + design position (stats, R1–R4, one primitive) |
-| 4 | System HLD — full-width diagram |
-| 5–7 | Layer 01 Ingestion (divider + pipeline + tables) |
-| 8–10 | Layer 02 Caching (divider + preflight + live state) |
-| 11–13 | Layer 03 Serving (divider + API + LibreChat) |
-| 14–16 | Layer 04 Observability (divider + ClickStack + Langfuse) |
-| 17–18 | Trust & evidence · close |
+| 2 | The problem — stats, ask, foreground-state logic |
+| 3 | System HLD — full-width diagram |
+| 4 | Layer 01 · Real-time ingestion |
+| 5 | Layer 01 · Tables & correction states (serving tables + compacted/live) |
+| 6 | Layer 02 · Caching (preflight + live state) |
+| 7 | Layer 03 · Query compiler (normative query + API surface) |
+| 8 | Layer 03 · Dashboard & demo — incl. live dashboard screenshot |
+| 9 | Layer 03 · LibreChat + MCP — incl. live chat screenshot |
+| 10 | Layer 04 · Observability (ClickStack + Langfuse) |
+| 11 | Scaling to 100× |
+| 12 | Assumptions & limits |
+| 13 | Trust & evidence |
+| 14 | Future scope |
 
 ## HLD image
 
