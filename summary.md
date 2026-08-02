@@ -73,4 +73,4 @@ Kafka streaming workers and a separate metadata registry appear on the high-leve
 
 ClickHouse Cloud hosts all serving data and ClickStack OTLP tables. LibreChat runs with the ClickHouse MCP server under a read-only user. Langfuse Cloud (or self-host) captures LLM traces when a LiteLLM proxy is configured with success/failure callbacks—org upstream URLs and API keys stay in gitignored `.env` files only.
 
-Pulse is MIT-licensed. See `README.md` (submission front door), `Architecture.md`, `RUN.md` for quickstart, and `presentations/pulse-by-layers/` for the architecture deck.
+Pulse is MIT-licensed. See `README.md`, `Architecture.md`, and `RUN.md` for setup, and `presentations/pulse-by-layers/` for the architecture deck.

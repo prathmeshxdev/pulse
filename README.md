@@ -27,97 +27,77 @@ day queries with arbitrary dimension filters.
 2. **Serve the curve** — Go query compiler (`BuildChartQuery`) + React dashboard with
    filters, breakdown, and live replay
 3. **Conversational layer** — LibreChat agents call **pulse MCP** (API-backed numbers),
-   optional read-only ClickHouse MCP for exploration
+   plus read-only ClickHouse MCP for exploration
 4. **Observability** — ClickStack OTLP (API/pipeline → Cloud `otel_*`); Langfuse traces
    LLM + tool calls via LiteLLM
 
-Design position: at training scale every team’s queries are fast. Pulse competes on
-**defensible semantics and reproducible correctness** — what “actively watching”
-means, why pause ≠ buffer, and evidence that sealed-day answers came from the
-pipeline. Scaling to 100× is argued analytically in the architecture deck.
+At training scale every team’s queries are fast. Pulse differentiates on **defensible
+semantics and reproducible correctness** — what “actively watching” means, why pause ≠
+buffer, and evidence that evaluation-day answers ran through the same pipeline.
+Scaling to 100× is argued analytically in the architecture deck.
 
 All dataset content is **synthetic**. No real customer data or PII.
 
 ## Hosted Demo
 
-<!-- TODO: replace after deploy -->
+**[Live dashboard](YOUR_HOSTED_DEMO_URL)**
 
-**[Live demo](YOUR_HOSTED_DEMO_URL)** — dashboard with concurrency curve, filters,
-breakdown, and (if deployed) LibreChat.
+The hosted demo shows:
 
-The demo covers:
+- Full-window concurrency curve with peaks and ramps
+- Dataset filters on the curve (platform, geo, content, properties, …)
+- Breakdown by dimension (e.g. platform, `show_name`)
 
-- Full-window concurrency curve with visible peaks / ramps
-- Dataset filters applied live to the curve (platform, geo, content, properties, …)
-- Breakdown by dimension (e.g. platform / show_name)
-- Optional: LibreChat asking peak/avg via pulse MCP
-- Optional: ClickStack / Langfuse evidence in the walkthrough video
+LibreChat, ClickStack, and Langfuse are demonstrated in the recorded walkthrough;
+wiring is in this repository ([`docker-compose.yml`](docker-compose.yml),
+[`RUN.md`](./RUN.md)).
 
 ## Demo Video
 
-<!-- TODO: replace with your 2–3 min recording -->
+**[Demo walkthrough (2–3 min)](YOUR_DEMO_VIDEO_URL)**
 
-**[Demo video (2–3 min)](YOUR_DEMO_VIDEO_URL)**
-
-Should show the concurrency curve + filters working live, plus a short walkthrough
-of ClickStack dashboards and a Langfuse trace / LibreChat turn if claimed.
+Covers the live dashboard (curve + filters), ClickStack dashboards, and a Langfuse
+trace of a pulse MCP analytics turn.
 
 ## Architecture
 
-See [`Architecture.md`](./Architecture.md) for the 1–2 pager.
+![Pulse system HLD](presentations/pulse-by-layers/public/hld.png)
 
-Slide deck (four layers, HLD, assumptions, scaling):
-[`presentations/pulse-by-layers/`](presentations/pulse-by-layers/).
+See [`Architecture.md`](./Architecture.md) for the full write-up.
 
-Deeper narrative: [`summary.md`](./summary.md).
+Slide deck: [`presentations/pulse-by-layers/`](presentations/pulse-by-layers/) ·
+deeper narrative: [`summary.md`](./summary.md).
 
-### Pitch deck PDF
-
-Export the Slidev deck for submission:
-
-```bash
-cd presentations/pulse-by-layers
-npm install
-npx slidev export --format pdf   # → pitch-deck.pdf (or copy to repo root)
-```
-
-Place `pitch-deck.pdf` in the submissions folder when opening the PR.
+**Pitch deck (PDF):** exported from the Slidev deck — `presentations/pulse-by-layers/` (`npx slidev export --format pdf`).
 
 ## How to run it
 
-**Full setup + commands:** see [`RUN.md`](./RUN.md).
+Step-by-step commands: [`RUN.md`](./RUN.md).
 
-### Supported platforms
+| Platform | Support |
+|----------|---------|
+| macOS, Linux | Full pipeline + Docker |
+| Windows (WSL2) | Full pipeline + Docker |
+| Windows (native) | Not supported |
 
-| Platform | Local run | Notes |
-|----------|-----------|-------|
-| **macOS** | Supported | Primary path |
-| **Linux** | Supported | Same bash + Docker/Podman flow |
-| **Windows (WSL2)** | Supported | Run inside WSL + Docker Desktop |
-| **Windows (native)** | **Not supported** | Use WSL2 |
-
-### Prerequisites
-
-| Tool | Why | Install |
-|------|-----|---------|
-| **Go 1.22+** | API, pipeline, bench | [go.dev](https://go.dev/dl/) |
-| **Node 20+** | Frontend (+ LibreChat pulse MCP) | [nodejs.org](https://nodejs.org/) |
-| **ClickHouse Cloud** (or local) | Primary datastore | Event credits / compose `--profile local` |
-| **Docker / Podman** (optional) | Compose stack, ClickStack, LibreChat | Docker Desktop / Podman |
-| **Redis** (optional) | Preflight cache — disable with `PREFLIGHT_ENABLED=false` | compose `redis` |
+| Tool | Role |
+|------|------|
+| Go 1.22+ | API, pipeline, bench |
+| Node 20+ | Frontend, pulse MCP |
+| ClickHouse Cloud | Primary datastore |
+| Docker / Podman | Compose stack (optional) |
+| Redis | Optional preflight cache (`PREFLIGHT_ENABLED=false` to skip) |
 
 ```bash
 cp .env.example .env   # set CLICKHOUSE_DSN
-# then follow RUN.md
 ```
 
 ---
 
 ## Dataset filters (filter → column map)
 
-SonyLIV guideline: document which dataset columns back each filter. Filters apply
-to the concurrency curve and breakdown via `POST /api/v1/concurrency/chart` /
-`/breakdown` (same `filters` array).
+Filters apply to the concurrency curve and breakdown through
+`POST /api/v1/concurrency/chart` and `/breakdown`.
 
 | UI / API dimension | Dataset source | Storage kind | Notes |
 |--------------------|----------------|--------------|-------|
@@ -132,26 +112,25 @@ to the concurrency curve and breakdown via `POST /api/v1/concurrency/chart` /
 | `title` | content `title` | `content_dict` | via `dictGet` |
 | `video_type` | content `video_type` | `content_dict` | |
 | `category` | content `category` | `content_dict` | |
-| `show_name` | content `show_name` | `content_dict` | unseen-day field; migration `013` |
-| `video_resolution` | raw event `video_resolution` | `properties` JSON | typed via `properties_key_mappings` |
-| other unknown event cols | remaining CSV columns | `properties` JSON | auto-cataloged; no DDL |
+| `show_name` | content `show_name` | `content_dict` | migration `013` |
+| `video_resolution` | raw event `video_resolution` | `properties` JSON | `properties_key_mappings` |
+| other unknown event cols | remaining CSV columns | `properties` JSON | auto-cataloged |
 
-Routing code: [`backend/internal/filters/filters.go`](backend/internal/filters/filters.go).
-Schema discovery: `GET /api/v1/schema/dimensions`, `GET /api/v1/schema/values?dimension=…`.
+Implementation: [`backend/internal/filters/filters.go`](backend/internal/filters/filters.go).
+Discovery API: `GET /api/v1/schema/dimensions`, `GET /api/v1/schema/values?dimension=…`.
 
 ---
 
 ## Concurrency curve (query)
 
-The product UI plots the minute (or hour/day) curve from
+The dashboard plots the minute (or hour/day) curve from
 `POST /api/v1/concurrency/chart` with `"metric":"timeseries"`.
 
-Compiled SQL shape (see [`backend/internal/concurrency/query.go`](backend/internal/concurrency/query.go)):
+Compiled SQL shape ([`backend/internal/concurrency/query.go`](backend/internal/concurrency/query.go)):
 
 ```sql
--- Conceptual; real SQL is built by BuildChartQuery
 WITH
-  sel AS ( … filtered segment ids … ),          -- omitted if no filters
+  sel AS ( … filtered segment ids … ),
   open_edges AS ( … ±1 for still-open sessions … ),
   opening AS ( SELECT sum(delta) … before window … ),
   net AS ( SELECT minute, sum(delta) … in window … ),
@@ -164,54 +143,43 @@ WITH
 SELECT minute, concurrency FROM curve ORDER BY minute;
 ```
 
-Peak = `max(concurrency)`; average = `avg(concurrency)` over **all clock minutes**
-in the window (including zeros). Unit `"session"` (default) or `"user"`.
+Peak = `max(concurrency)`; average = `avg(concurrency)` over all clock minutes in the
+window. Counting unit: `"session"` (default) or `"user"`.
 
 ---
 
-## Integrations evidence
-
-Wiring is committed (compose, `.env.example`, SDK code). Hosted demo + video should
-show these live; screenshots alone are not enough per submissions guidelines.
+## Integrations
 
 ### ClickStack
 
-- Collector: `docker-compose.yml` profile `observability` (`clickstack` service)
-- SDK: [`backend/internal/otelx/otelx.go`](backend/internal/otelx/otelx.go) — traces, metrics, logs
-- Instrumented: chart/breakdown handlers, HTTP middleware, pipeline commands
-- Destination: ClickHouse Cloud `default.otel_traces` / `otel_logs` / `otel_metrics_*`
-- Dashboards: [`clickstack/dashboards.sql`](clickstack/dashboards.sql) · guide [`clickstack/README.md`](clickstack/README.md)
+OTLP traces, metrics, and logs from the API and batch pipeline land in ClickHouse
+Cloud `default.otel_*`.
 
-<!-- TODO: add screenshots under docs/evidence/clickstack/ and link here -->
+- Collector: `docker-compose.yml` profile `observability`
+- Instrumentation: [`backend/internal/otelx/otelx.go`](backend/internal/otelx/otelx.go)
+- Dashboard SQL: [`clickstack/dashboards.sql`](clickstack/dashboards.sql)
+- Guide: [`clickstack/README.md`](clickstack/README.md)
 
 ### Langfuse
 
-- Path: LibreChat → LiteLLM (`success_callback: ["langfuse"]`) → models
+LibreChat routes through LiteLLM with `success_callback: ["langfuse"]`. Traces cover
+LLM generations and tool calls for analytics questions.
+
 - Guide: [`langfuse/README.md`](langfuse/README.md)
-- Env (redacted): `LANGFUSE_PUBLIC_KEY` / `SECRET_KEY` / `HOST` in `.env.example`
-
-<!-- TODO: paste public share links or commit exported JSON under evidence/langfuse/ -->
-
-**Public share links / exports (graded runs):**
-
-| Run | Link or file |
-|-----|----------------|
-| _TBD_ | _public Langfuse URL or `evidence/langfuse/*.json`_ |
+- Configuration template: [`.env.example`](.env.example)
 
 ### LibreChat
 
-- Config: [`librechat/librechat.yaml`](librechat/librechat.yaml) (runtime overlay gitignored)
-- Pulse MCP: [`librechat/pulse-mcp/`](librechat/pulse-mcp/) — tools wrap chart/breakdown API
-- System prompt: [`librechat/system_prompt.md`](librechat/system_prompt.md)
+- Config: [`librechat/librechat.yaml`](librechat/librechat.yaml)
+- Pulse MCP (chart/breakdown API): [`librechat/pulse-mcp/`](librechat/pulse-mcp/)
+- Agent prompt: [`librechat/system_prompt.md`](librechat/system_prompt.md)
 - Setup: [`librechat/AGENT_SETUP.md`](librechat/AGENT_SETUP.md)
-
-<!-- TODO: judge test credentials if chat is part of hosted demo -->
 
 ---
 
-## Unseen-day evidence
+## Evaluation-day evidence
 
-Pipeline output for the sealed evaluation dataset:
+Output from the sealed evaluation dataset pipeline:
 
 | Artifact | Path |
 |----------|------|
@@ -220,43 +188,42 @@ Pipeline output for the sealed evaluation dataset:
 | Invariants / sensitivity | [`evidence/unseen_day/`](evidence/unseen_day/) |
 | Query log / parts | `query_log.json`, `parts.json` |
 
-One command: `./clickhouse/scripts/unseen_day.sh <raw.csv> <content.csv>` (see [`RUN.md`](./RUN.md)).
+Pipeline: `./clickhouse/scripts/unseen_day.sh <raw.csv> <content.csv>` ([`RUN.md`](./RUN.md)).
 
 ---
 
-## For a judge, in five minutes
+## Design FAQ
 
-| Question | Where |
-|----------|-------|
-| What counts as “actively watching”? | Deck + `clickhouse/scripts/config.env` |
-| Why pause out / buffer in? | `evidence/sensitivity.md` |
+| Question | Answer |
+|----------|--------|
+| What counts as “actively watching”? | Four conditions — deck + `clickhouse/scripts/config.env` |
+| Why exclude pause but include buffer? | Viewer-intent asymmetry; measured in `evidence/sensitivity.md` |
 | Peak / average definition? | One minute curve; max / mean over clock minutes |
-| Why trust without an answer key? | `cmd/validate` → `evidence/` |
-| Does it scale? | Deck “Scaling to 100×” |
+| Correctness without an answer key? | `cmd/validate`, invariants, delta-vs-explosion cross-check |
+| Scaling? | Analytical 100× argument in deck |
 | Filter → column? | [table above](#dataset-filters-filter--column-map) |
 
 ## Problem source
 
 - [SonyLIV problem statement](https://github.com/sidagarwal04/click-a-thon-2026/blob/main/SonyLiv/PROBLEM_STATEMENT.md)
 - [Dataset details](https://github.com/sidagarwal04/click-a-thon-2026/blob/main/SonyLiv/dataset_details.md)
-- [Submission guidelines](https://github.com/sidagarwal04/click-a-thon-26-submissions/blob/main/SONYLIV_SUBMISSION_GUIDELINES.md)
 
 ## Repo layout
 
 ```
 pulse/
-├── README.md                     # this file (submission front door)
-├── Architecture.md               # 1–2 pager
-├── RUN.md                        # setup + one-command paths
-├── summary.md                    # deeper design narrative
-├── presentations/pulse-by-layers/# Slidev deck → export pitch-deck.pdf
-├── clickhouse/                   # migrations, scripts, benchmark spec
-├── backend/                      # Go API + pipeline
-├── frontend/                     # React dashboard + replay
-├── librechat/                    # LibreChat + pulse MCP
-├── clickstack/                   # OTEL / ClickStack
-├── langfuse/                     # Langfuse guide
-└── evidence/                     # bench + unseen_day artifacts
+├── README.md
+├── Architecture.md
+├── RUN.md
+├── summary.md
+├── presentations/pulse-by-layers/
+├── clickhouse/
+├── backend/
+├── frontend/
+├── librechat/
+├── clickstack/
+├── langfuse/
+└── evidence/
 ```
 
 ## License
