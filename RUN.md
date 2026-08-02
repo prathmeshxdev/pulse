@@ -144,6 +144,17 @@ The API uses the read-only user from
 [`clickhouse/scripts/create_readonly_user.sql`](clickhouse/scripts/create_readonly_user.sql)
 (SELECT on serving tables only).
 
+### Coolify Cloud
+
+Pulse deploys via [`docker-compose.coolify.yml`](docker-compose.coolify.yml) (API + dashboard only).
+
+1. [Coolify Cloud](https://coolify.io/docs/get-started/cloud) — create an account and connect a VPS over SSH (Hetzner, DigitalOcean, etc.).
+2. **New Resource → Docker Compose** — source: GitHub repo `prathmeshxdev/pulse`, branch `main`.
+3. **Docker Compose location:** `docker-compose.coolify.yml` · **Base directory:** `/`
+4. **Environment variables:** `CLICKHOUSE_DSN` (required), `PREFLIGHT_ENABLED=false`
+5. Assign the generated domain to the **`frontend`** service (container port **80**).
+6. Deploy; verify `https://<domain>/health` and the dashboard curve.
+
 ### Docker Compose on a Linux host
 
 ```bash

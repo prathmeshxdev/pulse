@@ -1,0 +1,16 @@
+# Pulse public demo — backend + dashboard for Coolify (Compose build pack).
+# Assign the Coolify domain to the `frontend` service (container port 80).
+# Set CLICKHOUSE_DSN in Coolify environment variables (read-only user recommended).
+
+services:
+  backend:
+    build: ./backend
+    environment:
+      ADDR: ":8080"
+      CLICKHOUSE_DSN: ${CLICKHOUSE_DSN:?}
+      PREFLIGHT_ENABLED: ${PREFLIGHT_ENABLED:-false}
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
