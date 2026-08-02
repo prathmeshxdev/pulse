@@ -10,6 +10,10 @@ at minute / hour / day grain with arbitrary dimension filters.
 dashboard, a live-replay view, and a LibreChat + MCP conversational layer — all
 reading the same ClickHouse Cloud tables.
 
+![Pulse system HLD — four layers](presentations/pulse-by-layers/public/hld.png)
+
+*System HLD: ingestion → caching → serving (API, dashboard, LibreChat) → observability (ClickStack, Langfuse).*
+
 ---
 
 ## Four layers
