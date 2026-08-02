@@ -10,8 +10,7 @@
 // sliding TTL (no possibility of a pathological session staying resident
 // forever via constant refresh) while still safely covering every session
 // this dataset has ever produced. Events arriving after a session's key has
-// expired are documented as reconcile-or-drop (see docs/ARCHITECTURE.md
-// "Real-time streaming path").
+// expired are treated as reconcile-or-drop (see presentation deck assumptions slide).
 //
 // Design (validated in internal/segments and via cmd/validateredis against
 // both synthetic and real production-shaped raw_events):

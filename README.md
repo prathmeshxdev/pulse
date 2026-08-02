@@ -52,32 +52,24 @@ The pipeline is pure Go over the native protocol, so steps 1–4 work against Cl
 
 ## Start here
 
-Read in this order. Two documents are authoritative and the rest are supporting detail.
-
-| # | Doc | Role | Read it when |
-|---|-----|------|--------------|
-| 1 | **[docs/FINAL_PLAN.md](docs/FINAL_PLAN.md)** | **Authoritative.** §1 is the complete locked rule set (R1–R10); §16 is the single list of open questions | Always. This is the build plan and the tie-breaker |
-| 2 | **[docs/SEMANTICS_SPEC.md](docs/SEMANTICS_SPEC.md)** | **Decision record.** The four binding decisions with rationale, plus what changed from earlier drafts and why | You want to know *why* a rule is what it is, or you are tempted to change one |
-| 3 | [docs/DATA_AND_PROBLEM_UNDERSTANDING.md](docs/DATA_AND_PROBLEM_UNDERSTANDING.md) | The problem, the datasets, and the measured data profile | You are new to the problem or need the event taxonomy |
-| 4 | [docs/ACTIVE_INTERVAL_LOGIC.md](docs/ACTIVE_INTERVAL_LOGIC.md) | How `session_active_segments` is derived from raw events | You are implementing or debugging the segment builder |
-| 5 | [docs/SCHEMA_AND_DDL.md](docs/SCHEMA_AND_DDL.md) | Table DDL, dictionary, idempotency mechanisms, schema evolution, migration map | You are writing migrations or reasoning about physical design |
-| 6 | [docs/VALIDATION.md](docs/VALIDATION.md) | Validation layers, invariants, sensitivity matrix, evidence artifacts | You are proving the pipeline correct |
-| 7 | [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) | Phasing, product-layer scope, integration surface | You are planning work or sequencing |
-
-### Which document wins
-
-`FINAL_PLAN.md` §1 is the rule set to implement against. `SEMANTICS_SPEC.md` records the same decisions with fuller rationale and carries the history of what was tried and rejected. **They must never disagree**, and `SEMANTICS_SPEC.md` §0 holds the mapping between them. If any other document contradicts either, the other document is the bug.
+| Resource | Role |
+|----------|------|
+| [`presentations/pulse-by-layers/`](presentations/pulse-by-layers/) | Architecture deck — four layers, HLD, assumptions, scaling, future scope |
+| [`librechat/system_prompt.md`](librechat/system_prompt.md) | Serving tables + semantics for the MCP agent |
+| [`clickhouse/scripts/config.env`](clickhouse/scripts/config.env) | Frozen semantic constants (pause, buffering, lookback, attribution) |
+| [`evidence/`](evidence/) | Benchmark answers, sensitivity matrix, validation artifacts |
+| [`clickstack/`](clickstack/) · [`langfuse/`](langfuse/) | Observability integration guides |
 
 ## For a judge, in five minutes
 
 | Question | Where it is answered |
 |---|---|
-| What counts as "actively watching"? | [FINAL_PLAN.md §1.4](docs/FINAL_PLAN.md#14-the-active-predicate) — four conditions, all required |
-| Why is paused playback excluded but buffering included? | [FINAL_PLAN.md R1 and R2](docs/FINAL_PLAN.md#15-the-rules-with-rationale). The asymmetry is deliberate and argued from viewer intent |
-| How are peak and average defined, exactly? | [FINAL_PLAN.md §2](docs/FINAL_PLAN.md#2-metric-definitions). One primitive: the filtered minute curve |
-| Why is the answer trustworthy without an answer key? | Hand-computed fixtures, automated invariants, a delta-vs-minute-explosion arithmetic cross-check, and a published sensitivity matrix — all runnable via `cmd/validate` (see `evidence/`) |
-| Does it scale, and where does it break? | [FINAL_PLAN.md §15](docs/FINAL_PLAN.md#15-scaling-to-100), including §15.10 on genuine weaknesses as distinct from managed trade-offs |
-| What is deliberately not built? | [FINAL_PLAN.md §12](docs/FINAL_PLAN.md#12-what-we-are-deliberately-not-building) |
+| What counts as "actively watching"? | Four conditions: foreground, playback started, not paused, session open — see presentation deck + `config.env` |
+| Why is paused playback excluded but buffering included? | Deliberate viewer-intent asymmetry; sensitivity in `evidence/sensitivity.md` |
+| How are peak and average defined, exactly? | One primitive: filtered minute curve; peak = max, average = mean over all clock minutes |
+| Why is the answer trustworthy without an answer key? | Hand-computed fixtures, automated invariants, delta-vs-explosion cross-check, published sensitivity matrix — `cmd/validate` → `evidence/` |
+| Does it scale, and where does it break? | Presentation deck “Scaling to 100×” + “Assumptions & limits” slides |
+| What is deliberately not built? | Presentation deck “Future scope” slide |
 
 ## Problem source
 
@@ -88,7 +80,7 @@ Read in this order. Two documents are authoritative and the rest are supporting 
 
 ```
 pulse/
-├── docs/                         # FINAL_PLAN, SEMANTICS_SPEC, DDL, ARCHITECTURE, validation
+├── presentations/pulse-by-layers/  # Slidev architecture deck + HLD image
 ├── clickhouse/
 │   ├── migrations/               # typed DDL (no JSON columns)
 │   ├── queries/                  # benchmark spec + reconcile_session.sql

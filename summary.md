@@ -18,7 +18,52 @@ Raw playback events are noisy: users background the app, pause, buffer, or leave
 
 ## Why it is trustworthy
 
-At ~10,866 sessions the dataset fits in cache; the differentiator is **correctness**, not latency bragging. Pulse ships automated invariants, a delta-versus-minute-explosion cross-check, hand-computed fixtures, benchmark evidence (`answers.json`, query logs), and a read-only MCP user that cannot read `raw_events` or mutate data. Documentation (`FINAL_PLAN.md`, `SEMANTICS_SPEC.md`) locks rules R1–R10 and records rationale—including deliberate asymmetries such as excluding pause but including buffering.
+At ~10,866 sessions the dataset fits in cache; the differentiator is **correctness**, not latency bragging. Pulse ships automated invariants, a delta-versus-minute-explosion cross-check, hand-computed fixtures, benchmark evidence (`answers.json`, query logs), and a read-only MCP user that cannot read `raw_events` or mutate data. Locked rules R1–R10 live in `clickhouse/scripts/config.env`; measured sensitivities are in `evidence/sensitivity.md`.
+
+## Assumptions and limits
+
+### Lookback period (`MAX_SEGMENT_SPAN_HOURS = 72`)
+
+The query template bounds the segment semi-join (`sel`) and opening balance to **window + 72h lookback**. Two bounds apply:
+
+- **Overlap bound (theorem):** segments outside the query window contribute either a cancelling ±1 pair or nothing, so restricting to overlapping segments is answer-preserving.
+- **Lookback bound (asserted precondition):** valid only while no segment exceeds 72 hours. The longest measured session is **43.6h**; `cmd/validate` asserts this on every pipeline run. If violated, straddling segments are dropped and the opening balance can silently shorten—so the pipeline fails loudly rather than returning a wrong number.
+
+At scale this turns O(history) scans into O(window + 72h). The same 72h bound is reused for Redis TTL and the `streamd` lateness window. At 100×, force-splitting segments at UTC day boundaries converts the assumption into a guarantee.
+
+### Semantic parameters (`config.env`)
+
+Each knob is one line in `clickhouse/scripts/config.env`; flipping any requires a segment rebuild. Measured impact (full window, vs baseline) is in `evidence/sensitivity.md`:
+
+| Parameter | Default | Impact if flipped |
+|-----------|---------|-------------------|
+| Pause counts as active (D2) | No | ~+2% peak/avg |
+| Buffering counts as active (D3) | Yes | ~+34% peak, +42% avg — **dominant knob** |
+| Heartbeat grace | 90s | Near-inert (0.87% of gaps > 90s) |
+| Minute attribution | any-overlap | Highest-risk locked choice vs private ground truth |
+| Average denominator | all clock minutes | Larger swing on narrow filters if flipped |
+| Timezone | UTC | Day grain at 00:00 UTC (05:30 IST); IST is a query-layer one-liner |
+| Dimension snapshot | at segment start (R10) | No mid-session split on language change |
+| Open segments | `least(last_hb + grace, watermark)` | Prevents phantom tail past end of known data |
+
+### Open questions we defaulted on
+
+| # | Question | Default until answered |
+|---|----------|------------------------|
+| Q1 | User-level concurrency? | Session-level primary; island-merge SQL ready if benchmarks ask |
+| Q2 | Hour/day grain definition? | Bucket the same minute curve (peak = max of minutes in bucket) |
+| Q3 | Pre-aggregate rollup? | No until p95 > 200 ms — measure, don't guess |
+| Q4 | Product depth? | ClickStack + minimal chart; LibreChat secondary |
+| Q5 | Split segment on dimension change? | Snapshot at start; 99.96% of sessions vary subtitle mid-flight |
+
+### Known limits
+
+- The training CSV has **zero open sessions** as loaded; the incremental path is demonstrated via `clickhouse/scripts/replay.sh` (watermark split + reconcile).
+- LibreChat MCP writes ad-hoc SQL—not the same compiler as `/api/v1/concurrency/chart`—so answers can diverge.
+- A Kafka consumer is not shipped; CSV replay + `streamd` prove the streaming design.
+- At training scale, latency cannot discriminate between designs; semantics and the sensitivity matrix are the score.
+
+Every parameter flip is explainable: one line in `config.env` plus a measured delta in `evidence/sensitivity.md`.
 
 ## What we deliberately did not build
 
@@ -28,4 +73,4 @@ Kafka streaming workers and a separate metadata registry appear on the high-leve
 
 ClickHouse Cloud hosts all serving data and ClickStack OTLP tables. LibreChat runs with the ClickHouse MCP server under a read-only user. Langfuse Cloud (or self-host) captures LLM traces when a LiteLLM proxy is configured with success/failure callbacks—org upstream URLs and API keys stay in gitignored `.env` files only.
 
-Pulse is MIT-licensed. See `README.md` for quickstart, `presentations/pulse-by-layers/` for the architecture deck, and `docs/` for the full specification.
+Pulse is MIT-licensed. See `README.md` for quickstart and `presentations/pulse-by-layers/` for the architecture deck.

@@ -8,11 +8,17 @@ Complements **ClickStack** (Pulse API / pipeline → ClickHouse Cloud `otel_*`).
 Langfuse sits in the **observability layer** (top) of the four-layer Pulse HLD.
 ClickStack covers API/pipeline spans; Langfuse covers conversational LLM traces.
 
-![Pulse system HLD — Langfuse is in the observability layer alongside ClickStack](../presentations/pulse-by-layers/public/hld.png)
+![Pulse system HLD](../presentations/pulse-by-layers/public/hld.png)
 
 Solid lines: implemented paths. Dotted lines: direct MCP-to-ClickHouse reads or
-future components (metadata registry, Kafka ingestion). See
-`presentations/pulse-by-layers/` for the full deck and HLD review notes.
+future components (metadata registry, Kafka ingestion).
+
+| Resource | Purpose |
+|----------|---------|
+| [`presentations/pulse-by-layers/`](../presentations/pulse-by-layers/) | Full architecture deck (Slidev) |
+| [`librechat/system_prompt.md`](../librechat/system_prompt.md) | Serving tables + semantics for MCP |
+| [`clickhouse/scripts/config.env`](../clickhouse/scripts/config.env) | Frozen semantic constants |
+| [`clickstack/`](../clickstack/) | ClickStack / OTLP setup |
 
 ## Cloud vs self-host
 
