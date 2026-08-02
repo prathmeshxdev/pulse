@@ -59,7 +59,7 @@ wiring is in this repository ([`docker-compose.yml`](docker-compose.yml),
 
 ## Demo Video
 
-**[Demo walkthrough (2–3 min)](YOUR_DEMO_VIDEO_URL)**
+**[Demo walkthrough (2–3 min)](https://www.loom.com/share/b30476ff84394df986424f9c75e3e46e)**
 
 Covers the live dashboard (curve + filters), ClickStack dashboards, and a Langfuse
 trace of a pulse MCP analytics turn.
