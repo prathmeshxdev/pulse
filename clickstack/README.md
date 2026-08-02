@@ -86,6 +86,15 @@ SELECT * FROM default.v_pulse_logs_1h LIMIT 50;
 5. **CH query time** — `pulse.clickhouse.duration_ms` histogram / `db.query` events
 6. **Top dimensions** — breakdown calls by `SpanAttributes['dimension']`
 
+## Submission evidence (HyperDX exports)
+
+Committed CSV search exports from the ClickStack / HyperDX UI:
+
+- [`evidence/clickstack/hyperdx_traces_2026-08-02.csv`](../evidence/clickstack/hyperdx_traces_2026-08-02.csv) — `concurrency.chart`, `concurrency.breakdown`, HTTP spans
+- [`evidence/clickstack/hyperdx_logs_2026-08-02.csv`](../evidence/clickstack/hyperdx_logs_2026-08-02.csv) — `chart ok`, `breakdown ok`, `request ok`
+
+See [`evidence/clickstack/README.md`](../evidence/clickstack/README.md).
+
 ## Local HyperDX (legacy)
 
 `clickstack/docker-compose.yml` still runs the all-in-one HyperDX UI on :8081 for

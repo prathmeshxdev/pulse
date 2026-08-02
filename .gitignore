@@ -1,6 +1,7 @@
 # Local data (provided separately; symlink to an absolute local path)
 /hackathon-data
 *.csv
+!evidence/clickstack/*.csv
 
 # Local editor / assistant settings
 /.claude/

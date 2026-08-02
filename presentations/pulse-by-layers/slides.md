@@ -428,6 +428,7 @@ SELECT minute, concurrency FROM curve ORDER BY minute;</pre>
           <li><code>clickstack-otel-collector</code> in docker-compose → <code>otel_*</code> tables</li>
           <li>Backend: <code>OTEL_EXPORTER_OTLP_ENDPOINT=http://clickstack:4318</code></li>
           <li>Spans: <code>concurrency.chart</code>, pipeline CLIs, service <code>pulse-concurrency-api</code></li>
+          <li>Evidence: HyperDX CSV exports in <code>evidence/clickstack/</code></li>
           <li><code>smoke_integrations.sh</code> — API, CH, OTLP, MCP health</li>
         </ul>
         <div class="pl-chip-row">

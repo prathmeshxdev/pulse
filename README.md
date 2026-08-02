@@ -182,6 +182,13 @@ Cloud `default.otel_*`.
 - Dashboard SQL: [`clickstack/dashboards.sql`](clickstack/dashboards.sql)
 - Guide: [`clickstack/README.md`](clickstack/README.md)
 
+![ClickStack traces — concurrency.chart and HTTP spans](evidence/screenshots/clickstack-traces.png)
+
+![ClickStack logs — chart ok, breakdown ok, request ok](evidence/screenshots/clickstack-logs.png)
+
+HyperDX search exports (CSV): [`evidence/clickstack/hyperdx_traces_2026-08-02.csv`](evidence/clickstack/hyperdx_traces_2026-08-02.csv)
+· [`evidence/clickstack/hyperdx_logs_2026-08-02.csv`](evidence/clickstack/hyperdx_logs_2026-08-02.csv)
+
 ### Langfuse
 
 LibreChat routes through LiteLLM with `success_callback: ["langfuse"]`. Traces cover
@@ -215,6 +222,7 @@ Output from the sealed evaluation dataset pipeline:
 | Invariants / sensitivity | [`evidence/unseen_day/`](evidence/unseen_day/) |
 | Query log / parts | `query_log.json`, `parts.json` |
 | Screenshots (dashboard, LibreChat, ClickStack, ClickHouse, HLD) | [`evidence/screenshots/`](evidence/screenshots/) |
+| ClickStack traces / logs (HyperDX CSV) | [`evidence/clickstack/`](evidence/clickstack/) |
 | Langfuse traces (raw export) | [`evidence/langfuse_traces.json`](evidence/langfuse_traces.json) |
 
 Pipeline: `./clickhouse/scripts/unseen_day.sh <raw.csv> <content.csv>` ([`RUN.md`](./RUN.md)).
@@ -254,6 +262,9 @@ pulse/
 ├── clickstack/
 ├── langfuse/
 └── evidence/
+    ├── clickstack/     # HyperDX trace + log CSV exports
+    ├── screenshots/
+    └── unseen_day/
 ```
 
 ## License
